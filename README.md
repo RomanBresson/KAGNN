@@ -2,4 +2,4 @@ This is the official repository for our paper "KAGNN: Evaluating Kolmogorov-Arno
 
 All experiments were run with python>=3.11.
 
-The code is organized by graph learning tasks.
+The code is organized by graph learning tasks. All three tasks will be added shortly.
