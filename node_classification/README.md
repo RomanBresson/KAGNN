@@ -2,6 +2,7 @@ To retrieve the results for node classification run:
 
 '''
 bash scripts/run_experiments_kan.sh
+
 bash scripts/run_experiments_mlp.sh
 '''
 
