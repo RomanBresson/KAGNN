@@ -105,7 +105,7 @@ print('grid_size:', best_hyperparams['grid_size'])
 print('spline_order:', best_hyperparams['spline_order'])
 
 results = []
-for _ in range(10):
+for run in range(10):
     print()
     print(f'Run {run}:')
     print()
