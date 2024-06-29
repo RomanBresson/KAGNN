@@ -5,7 +5,7 @@ from torch.optim import Adam
 from torch_geometric.datasets import ZINC
 from torch_geometric.loader import DataLoader
 
-from models import GKAN
+from models import KAGIN
 from utils import EarlyStopper
 
 # Argument parser
@@ -41,7 +41,7 @@ for lr in LR:
                 for spline_order in SPLINE_ORDER:
                     print('Evaluating the following hyperparameters:')
                     print('lr:', lr, 'hidden_dim:', hidden_dim, 'n_layers:', n_layers, 'grid_size:', grid_size, 'spline_order:', spline_order)
-                    model = GKAN(args.n_gnn_layers, 21, hidden_dim, n_layers, grid_size, spline_order, 1, args.dropout, True).to(device)
+                    model = KAGIN(args.n_gnn_layers, 21, hidden_dim, n_layers, grid_size, spline_order, 1, args.dropout, True).to(device)
                     optimizer = Adam(model.parameters(), lr=lr)
 
                     def train(epoch):
@@ -95,7 +95,7 @@ for run in range(10):
     print(f'Run {run}:')
     print()
 
-    model = GKAN(args.n_gnn_layers, 21, best_hyperparams['hidden_dim'], best_hyperparams['n_layers'], best_hyperparams['grid_size'], best_hyperparams['spline_order'], 1, args.dropout, True).to(device)
+    model = KAGIN(args.n_gnn_layers, 21, best_hyperparams['hidden_dim'], best_hyperparams['n_layers'], best_hyperparams['grid_size'], best_hyperparams['spline_order'], 1, args.dropout, True).to(device)
     total_params = sum(p.numel() for p in model.parameters())
     print('Number of parameters:', total_params)
     print()
