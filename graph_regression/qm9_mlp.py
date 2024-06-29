@@ -99,7 +99,7 @@ print('hidden_dim:', best_hyperparams['hidden_dim'])
 print('n_layers:', best_hyperparams['n_layers'])
 
 results = []
-for _ in range(10):
+for run in range(10):
     print()
     print(f'Run {run}:')
     print()
