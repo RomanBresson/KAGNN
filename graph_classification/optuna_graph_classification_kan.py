@@ -11,10 +11,10 @@ from torch_geometric.loader import DataLoader
 
 from graph_classification_utils import *
 
-from model import GKAN
+from model import KAGIN
 
 # Argument parser
-parser = argparse.ArgumentParser(description='GKAN')
+parser = argparse.ArgumentParser(description='KAGIN')
 parser.add_argument('--dataset', default='MUTAG', help='Dataset name')
 parser.add_argument('--batch-size', type=int, default=64, help='Input batch size for training')
 parser.add_argument('--nb_gnn_layers', type=int, default=4, help='Input batch size for training')
@@ -49,7 +49,7 @@ accs = []
 curr_config = 0
 
 def train_model_with_parameters(lr, hidden_layers, hidden_dim, dropout, grid_size, spline_order, train_loader, val_loader, test_loader=None):
-    model = GKAN(args.nb_gnn_layers, dataset_num_features, hidden_dim, dataset.num_classes, hidden_layers, grid_size, spline_order, dropout).to(device)
+    model = KAGIN(args.nb_gnn_layers, dataset_num_features, hidden_dim, dataset.num_classes, hidden_layers, grid_size, spline_order, dropout).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     best_val_loss = float('inf')
     early_stopper = EarlyStopper(patience=args.patience)

@@ -51,9 +51,9 @@ def make_kan(num_features, hidden_dim, out_dim, hidden_layers, grid_size, spline
     sizes = [num_features] + [hidden_dim]*(hidden_layers-2) + [out_dim]
     return(KAN(layers_hidden=sizes, grid_size=grid_size, spline_order=spline_order))
     
-class GKAN(nn.Module):
+class KAGIN(nn.Module):
     def __init__(self, gnn_layers, num_features, hidden_dim, num_classes, hidden_layers, grid_size, spline_order, dropout):
-        super(GKAN, self).__init__()
+        super(KAGIN, self).__init__()
         self.n_layers = gnn_layers
         lst = list()
         lst.append(GINConv(make_kan(num_features, hidden_dim, hidden_dim, hidden_layers, grid_size, spline_order)))
