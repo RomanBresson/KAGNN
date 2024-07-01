@@ -124,7 +124,9 @@ def main():
     n_epochs = 1000
     skip = True
     n_trials = 100
-
+    if not os.path.exists('data'):
+        os.makedirs('data')
+      
     set_seed(1)
     for dataset_name in ['Cora', 'CiteSeer', 'Actor', 'Texas','Cornell','Wisconsin', 'ogbn-arxiv']:
         for conv_type in ['gin','gcn']:                     
