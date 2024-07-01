@@ -2,10 +2,11 @@ This is the official repository for our paper [KAGNN: Evaluating Kolmogorov-Arno
 
 All experiments were run with python>=3.11.
 
-The code is organized by graph learning tasks. All three tasks will be added shortly.
+The code is split by learning task (among node classification, graph classification, graph regression). Scripts are provided so experiments can be reproduced.
 
-Please cite our work if you use this repo:
+For our KAN-based models, we used the [efficient-kan implementation](https://github.com/Blealtan/efficient-kan).
 
+Please cite our work if you use code from this repository:
 ```
 @misc{bresson2024kagnn,
       title={KAGNNs: Kolmogorov-Arnold Networks meet Graph Learning}, 
