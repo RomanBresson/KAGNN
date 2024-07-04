@@ -1,4 +1,4 @@
-This is the official repository for our paper [KAGNN: Evaluating Kolmogorov-Arnold Networks on Graph Learning Tasks](https://arxiv.org/abs/2406.18380).
+This is the official repository for our paper [KAGNNs: Kolmogorov-Arnold Networks meet Graph Learning](https://arxiv.org/abs/2406.18380).
 
 All experiments were run with python>=3.11.
 
