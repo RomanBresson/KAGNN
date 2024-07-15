@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from ekan import *
+from fastkan import FastKAN
 
 from torch_geometric.nn import GINConv
 from torch_geometric.nn import global_add_pool
@@ -70,6 +71,39 @@ class KAGIN(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.relu = nn.ReLU()
 
+    def forward(self, data):
+        x, edge_index = data.x, data.edge_index
+        for i in range(self.n_layers):
+            x = self.conv[i](x, edge_index)
+            x = self.bn[i](x)
+            x = self.dropout(x)
+
+        x = global_add_pool(x, data.batch)
+        x = self.kan(x)
+        return F.log_softmax(x, dim=1)
+
+def make_fastkan(num_features, hidden_dim, out_dim, hidden_layers, grid_size):
+    sizes = [num_features] + [hidden_dim]*(hidden_layers-2) + [out_dim]
+    return(FastKAN(layers_hidden=sizes, num_grids=grid_size))
+
+class FASTKAGIN(nn.Module):
+    def __init__(self, gnn_layers, num_features, hidden_dim, num_classes, hidden_layers, grid_size, dropout):
+        super(FASTKAGIN, self).__init__()
+        self.n_layers = gnn_layers
+        lst = list()
+        lst.append(GINConv(make_fastkan(num_features, hidden_dim, hidden_dim, hidden_layers, grid_size)))
+        for i in range(gnn_layers-1):
+            lst.append(GINConv(make_fastkan(hidden_dim, hidden_dim, hidden_dim, hidden_layers, grid_size)))
+        self.conv = nn.ModuleList(lst)
+
+        lst = list()
+        for i in range(gnn_layers):
+            lst.append(nn.BatchNorm1d(hidden_dim))
+        self.bn = nn.ModuleList(lst)
+
+        self.kan = make_fastkan(hidden_dim, hidden_dim, num_classes, hidden_layers, grid_size)
+        self.dropout = nn.Dropout(dropout)
+        self.relu = nn.ReLU()
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
