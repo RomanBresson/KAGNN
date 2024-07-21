@@ -1,4 +1,5 @@
 from ekan import KAN as eKAN
+from fastkan import FastKAN
 import torch
 
 from torch.nn import Sequential
@@ -15,9 +16,9 @@ from torch_geometric.typing import (
 
 
 class GCKANLayer(torch.nn.Module):
-    def __init__(self, in_feat:int, 
+    def __init__(self, in_feat:int,
                  out_feat:int,
-                 grid_size:int=4, 
+                 grid_size:int=4,
                  spline_order:int=3):
         super(GCKANLayer, self).__init__()
         self.kan = eKAN([in_feat, out_feat], grid_size=grid_size, spline_order=spline_order)
@@ -26,26 +27,40 @@ class GCKANLayer(torch.nn.Module):
     def forward(self, X, A_hat_normalized):
         return self.kan(A_hat_normalized @ X)
 
-
-
-
 class GIKANLayer(GINConv):
-    def __init__(self, in_feat:int, 
+    def __init__(self, in_feat:int,
                  out_feat:int,
-                 grid_size:int=4, 
+                 grid_size:int=4,
                  spline_order:int=3):
         kan = eKAN([in_feat, out_feat], grid_size=grid_size, spline_order=spline_order)
         GINConv.__init__(self, kan)
 
 
+class GCFASTKANLayer(torch.nn.Module):
+    def __init__(self, in_feat:int,
+                 out_feat:int,
+                 grid_size:int=4):
+        super(GCFASTKANLayer, self).__init__()
+        self.kan = FastKAN([in_feat, out_feat], num_grids=grid_size)
+
+
+    def forward(self, X, A_hat_normalized):
+        return self.kan(A_hat_normalized @ X)
+
+class GIFASTKANLayer(GINConv):
+    def __init__(self, in_feat:int,
+                 out_feat:int,
+                 grid_size:int=4):
+        kan = FastKAN([in_feat, out_feat], num_grids=grid_size)
+        GINConv.__init__(self, kan)
 
 
 class GNN_Nodes(torch.nn.Module):
-    def __init__(self,  conv_type :str, 
-                 num_layers:int, 
-                 num_features:int, 
+    def __init__(self,  conv_type :str,
+                 num_layers:int,
+                 num_features:int,
                  hidden_channels:int,
-                 num_classes:int, 
+                 num_classes:int,
                  skip:bool = True):
         super().__init__()
         self.convs = torch.nn.ModuleList()
@@ -108,13 +123,13 @@ class GNN_Nodes(torch.nn.Module):
 
 
 class GKAN_Nodes(torch.nn.Module):
-    def __init__(self, conv_type :str, 
-                 num_layers:int, 
-                 num_features:int, 
+    def __init__(self, conv_type :str,
+                 num_layers:int,
+                 num_features:int,
                  hidden_channels:int,
-                 num_classes:int, 
-                 skip:bool = True, 
-                 grid_size:int = 4, 
+                 num_classes:int,
+                 skip:bool = True,
+                 grid_size:int = 4,
                  spline_order:int = 3):
         super().__init__()
 
@@ -134,6 +149,48 @@ class GKAN_Nodes(torch.nn.Module):
                                        num_classes, grid_size, spline_order)
         else:
             self.conv_out = dic[conv_type](hidden_channels, num_classes, grid_size, spline_order)
+
+
+    def forward(self, x: torch.tensor, edge_index: torch.tensor):
+        l = []
+        l.append(x)
+        for conv in self.convs:
+
+            x = conv(x, edge_index)
+            l.append(x)
+
+        if self.skip:
+            x = torch.cat(l, dim=1)
+
+        x = self.conv_out(x,edge_index)
+        return x
+
+class GFASTKAN_Nodes(torch.nn.Module):
+    def __init__(self, conv_type :str,
+                 num_layers:int,
+                 num_features:int,
+                 hidden_channels:int,
+                 num_classes:int,
+                 skip:bool = True,
+                 grid_size:int = 4):
+        super().__init__()
+
+        dic = {"gcn": GCFASTKANLayer , "gin": GIFASTKANLayer}
+        self.convs = torch.nn.ModuleList()
+
+        for i in range(num_layers-1):
+            if i ==0:
+                self.convs.append(dic[conv_type](num_features, hidden_channels, grid_size))
+            else:
+                self.convs.append(dic[conv_type]( hidden_channels, hidden_channels, grid_size))
+
+        self.skip = skip
+
+        if self.skip:
+            self.conv_out = dic[conv_type](num_features+(num_layers-1)*hidden_channels,
+                                       num_classes, grid_size)
+        else:
+            self.conv_out = dic[conv_type](hidden_channels, num_classes, grid_size)
 
 
     def forward(self, x: torch.tensor, edge_index: torch.tensor):

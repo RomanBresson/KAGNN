@@ -11,47 +11,45 @@ from torch_sparse import SparseTensor
 from torch_geometric.datasets import Actor, WebKB
 import torch_geometric as pyg
 from utils import sparse_diag, set_seed,experiment_node_class
-from models import GKAN_Nodes
+from models import GFASTKAN_Nodes
 import numpy as np
 import optuna
 import json 
 from optuna.trial import Trial
 
 
-def objective( trial: Trial, 
-              data: pyg.data.Data, 
-              dataset_name: str, 
-              dataset: pyg.data.Dataset, 
-              conv_type: str, 
-              skip: bool, 
-              n_epochs: int, 
+def objective( trial: Trial,
+              data: pyg.data.Data,
+              dataset_name: str,
+              dataset: pyg.data.Dataset,
+              conv_type: str,
+              skip: bool,
+              n_epochs: int,
               device: str) -> float:
     grid_size = trial.suggest_int('grid_size', 3, 5)
-    spline_order = trial.suggest_int('spline_order', 1,4)
     hidden_channels = trial.suggest_categorical('hidden_channels', [16, 32, 64, 128])
     lr = trial.suggest_float('lr', 0.001, 0.01, log=True)
     hidden_layers = trial.suggest_int('hidden_layers', 1, 4)
     regularizer = trial.suggest_categorical('regularizer', [0, 5e-4])
 
-    accuracy = train_and_evaluate_model(spline_order, hidden_channels, lr, hidden_layers, regularizer, data, dataset_name, dataset,
+    accuracy = train_and_evaluate_model(hidden_channels, lr, hidden_layers, regularizer, data, dataset_name, dataset,
                                conv_type, skip, grid_size,  n_epochs, device )
     
     return accuracy
 
 
 
-def train_and_evaluate_model(spline_order: int, 
-                             hidden_channels: int, 
-                             lr: float, 
-                             hidden_layers: int, 
-                             regularizer: float, 
-                             data: pyg.data.Data, 
-                             dataset_name: str, 
+def train_and_evaluate_model(hidden_channels: int,
+                             lr: float,
+                             hidden_layers: int,
+                             regularizer: float,
+                             data: pyg.data.Data,
+                             dataset_name: str,
                              dataset: pyg.data.Dataset,
-                             conv_type: str, 
-                             skip: bool, 
-                             grid_size: int, 
-                             n_epochs: int, 
+                             conv_type: str,
+                             skip: bool,
+                             grid_size: int,
+                             n_epochs: int,
                              device: str = "cuda") -> float:
     best_val_acc_full = []
     best_test_acc_full = []
@@ -72,8 +70,8 @@ def train_and_evaluate_model(spline_order: int,
         best_val_acc_full = [] 
         best_test_acc_full = []
         
-        model = GKAN_Nodes( conv_type = conv_type,  num_layers = hidden_layers, num_features = dataset.num_features, hidden_channels= hidden_channels, 
-                        num_classes = dataset.num_classes, skip = skip, grid_size=grid_size, spline_order=spline_order).to(device)
+        model = GFASTKAN_Nodes( conv_type = conv_type,  num_layers = hidden_layers, num_features = dataset.num_features, hidden_channels= hidden_channels,
+                        num_classes = dataset.num_classes, skip = skip, grid_size=grid_size).to(device)
         
         optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=regularizer)
         
@@ -86,8 +84,8 @@ def train_and_evaluate_model(spline_order: int,
         test_mask = data.test_mask
         
             
-        model = GKAN_Nodes( conv_type = conv_type,  num_layers = hidden_layers, num_features = dataset.num_features, hidden_channels= hidden_channels, 
-                        num_classes = dataset.num_classes, skip = skip, grid_size=grid_size, spline_order=spline_order).to(device)
+        model = GFASTKAN_Nodes( conv_type = conv_type,  num_layers = hidden_layers, num_features = dataset.num_features, hidden_channels= hidden_channels,
+                        num_classes = dataset.num_classes, skip = skip, grid_size=grid_size).to(device)
         
         optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=regularizer)
             
@@ -98,8 +96,8 @@ def train_and_evaluate_model(spline_order: int,
         best_test_acc_full = []
         
         for sim in range(len(data.train_mask[0])):
-            model = GKAN_Nodes( conv_type = conv_type,  num_layers = hidden_layers, num_features = dataset.num_features, hidden_channels= hidden_channels, 
-                               num_classes = dataset.num_classes, skip = skip, grid_size=grid_size, spline_order=spline_order).to(device)
+            model = GFASTKAN_Nodes( conv_type = conv_type,  num_layers = hidden_layers, num_features = dataset.num_features, hidden_channels= hidden_channels,
+                               num_classes = dataset.num_classes, skip = skip, grid_size=grid_size).to(device)
             optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=regularizer)
             train_mask = data.train_mask[:,sim]
             valid_mask = data.val_mask[:,sim]
@@ -143,18 +141,18 @@ def main():
                 dataset = WebKB(root='data/'+dataset_name, name=dataset_name, transform=NormalizeFeatures())
             data = dataset[0]
         
-            log =f'results/best_params_kan_{conv_type}_{dataset_name}.json'
+            log =f'results/best_params_fastkan_{conv_type}_{dataset_name}.json'
             
             if conv_type=='gcn':
                 N = data.edge_index.max().item() + 1
                 data.edge_index = data.edge_index.to("cpu")
 
-                A = SparseTensor(row=data.edge_index[0], col=data.edge_index[1], 
-                                value=torch.ones(data.edge_index.size(1)), 
+                A = SparseTensor(row=data.edge_index[0], col=data.edge_index[1],
+                                value=torch.ones(data.edge_index.size(1)),
                                 sparse_sizes=(N, N)).to_torch_sparse_coo_tensor()
 
-                I = SparseTensor(row=torch.arange(N), col=torch.arange(N), 
-                                value=torch.ones(N), 
+                I = SparseTensor(row=torch.arange(N), col=torch.arange(N),
+                                value=torch.ones(N),
                                 sparse_sizes=(N, N)).to_torch_sparse_coo_tensor()
 
                 A_hat = A + I
