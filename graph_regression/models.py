@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from ekan import *
+from fastkan import FastKAN
 
 from torch_geometric.nn import GINConv
 from torch_geometric.nn import global_add_pool
@@ -68,6 +69,41 @@ class KAGIN(nn.Module):
         self.conv = nn.ModuleList(lst)
 
         self.kan = make_kan(hidden_dim, 64, n_targets, 2, grid_size, spline_order)
+        self.dropout = nn.Dropout(dropout)
+        self.relu = nn.ReLU()
+
+    def forward(self, data):
+        x, edge_index = data.x, data.edge_index
+        if self.embedding_layer:
+            x = self.node_emb(x).squeeze()
+        for i in range(self.n_layers):
+            x = self.conv[i](x, edge_index)
+            x = self.dropout(x)
+
+        x = global_add_pool(x, data.batch)
+        x = self.kan(x)
+        return x
+
+def make_fastkan(num_features, hidden_dim, out_dim, hidden_layers, grid_size):
+    sizes = [num_features] + [hidden_dim]*(hidden_layers-2) + [out_dim]
+    return(FastKAN(layers_hidden=sizes, num_grids=grid_size))
+
+class FASTKAGIN(nn.Module):
+    def __init__(self, gnn_layers, num_features, hidden_dim, hidden_layers, grid_size, n_targets, dropout, embedding_layer=False):
+        super(FASTKAGIN, self).__init__()
+        self.n_layers = gnn_layers
+        self.embedding_layer = embedding_layer
+        lst = list()
+        if embedding_layer:
+            self.node_emb = nn.Embedding(num_features, 100)
+            lst.append(GINConv(make_fastkan(100, hidden_dim, hidden_dim, hidden_layers, grid_size)))
+        else:
+            lst.append(GINConv(make_fastkan(num_features, hidden_dim, hidden_dim, hidden_layers, grid_size)))
+        for i in range(gnn_layers-1):
+            lst.append(GINConv(make_fastkan(hidden_dim, hidden_dim, hidden_dim, hidden_layers, grid_size)))
+        self.conv = nn.ModuleList(lst)
+
+        self.kan = make_fastkan(hidden_dim, 64, n_targets, 2, grid_size)
         self.dropout = nn.Dropout(dropout)
         self.relu = nn.ReLU()
 
