@@ -4,9 +4,6 @@ import numpy as np
 import optuna
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch import optim
 from torch_geometric.loader import DataLoader
 
 from graph_classification_utils import *
@@ -17,7 +14,7 @@ from model import GIN
 parser = argparse.ArgumentParser(description='GIN')
 parser.add_argument('--dataset', default='MUTAG', help='Dataset name')
 parser.add_argument('--batch-size', type=int, default=64, help='Input batch size for training')
-parser.add_argument('--nb_gnn_layers', type=int, default=4, help='Input batch size for training')
+parser.add_argument('--nb_gnn_layers', type=int, default=4, help='Number of message passing layers')
 parser.add_argument('--epochs', type=int, default=2000, help='Number of epochs to train')
 parser.add_argument('--patience', type=int, default=20, help='Patience of early stopping')
 args = parser.parse_args()

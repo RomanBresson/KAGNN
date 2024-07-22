@@ -6,7 +6,6 @@ from torch_geometric.transforms import NormalizeFeatures
 
 import torch
 from ogb.nodeproppred import PygNodePropPredDataset
-from torch_sparse import SparseTensor
 from torch_geometric.datasets import Actor, WebKB
 import torch_geometric as pyg
 from utils import sparse_diag, experiment_node_class, set_seed
