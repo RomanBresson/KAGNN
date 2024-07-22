@@ -146,13 +146,8 @@ def main():
                 N = data.edge_index.max().item() + 1
                 data.edge_index = data.edge_index.to("cpu")
 
-                A = SparseTensor(row=data.edge_index[0], col=data.edge_index[1],
-                                value=torch.ones(data.edge_index.size(1)),
-                                sparse_sizes=(N, N)).to_torch_sparse_coo_tensor()
-
-                I = SparseTensor(row=torch.arange(N), col=torch.arange(N),
-                                value=torch.ones(N),
-                                sparse_sizes=(N, N)).to_torch_sparse_coo_tensor()
+                A = torch.sparse_coo_tensor(data.edge_index, torch.ones(data.edge_index.size(1)), (N, N))
+                I = torch.sparse_coo_tensor(torch.arange(N).repeat(2,1), torch.ones(N), (N, N))
 
                 A_hat = A + I
                 # can do that because D_hat is a vector here
