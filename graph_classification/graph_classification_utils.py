@@ -30,6 +30,13 @@ class Degree(object):
         data.x = F.one_hot(deg, num_classes=36)
         return data
 
+class to_cuda(object):
+    def __call__(self, data):
+        data.x = data.x.to(torch.device("cuda"))
+        data.y = data.y.to(torch.device("cuda"))
+        data.edge_index = data.edge_index.to(torch.device("cuda"))
+        return data
+
 def train(model, loader, optimizer, device):
     model.train()
     loss_all = 0
