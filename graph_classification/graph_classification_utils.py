@@ -4,6 +4,7 @@ from torch_geometric.datasets import TUDataset
 import torch
 import torch.nn.functional as F
 import optuna
+import numpy as np
 
 unlabeled_datasets = ['IMDB-BINARY', 'IMDB-MULTI', 'REDDIT-BINARY', 'REDDIT-MULTI-5K', 'COLLAB']
 
@@ -113,7 +114,7 @@ def parameters_finder(trainer_function, objective_function, log_file, splits, da
                 train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 
                 print('---------------- Split {} ----------------'.format(it))
-                test_acc = trainer_function(best_hyperparams['lr'], best_hyperparams['hidden_layers'], best_hyperparams['hidden_dim'], best_hyperparams['dropout'], best_hyperparams['grid_size'], best_hyperparams['spline_order'], train_loader, val_loader, test_loader)
+                test_acc = trainer_function(best_hyperparams, train_loader, val_loader, test_loader)
                 test_accs.append(test_acc)
 
             accs.append(np.mean(test_accs))

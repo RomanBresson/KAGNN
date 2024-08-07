@@ -10,7 +10,8 @@ from graph_classification_utils import *
 
 from model import FASTKAGIN
 
-def train_model_with_parameters(lr, hidden_layers, hidden_dim, dropout, grid_size, train_loader, val_loader, test_loader=None):
+def train_model_with_parameters(params, train_loader, val_loader, test_loader=None):
+    lr, hidden_layers, hidden_dim, dropout, grid_size = params['lr'], params['hidden_layers'], params['hidden_dim'], params['dropout'], params['grid_size']
     model = FASTKAGIN(args.nb_gnn_layers, dataset_num_features, hidden_dim, dataset.num_classes, hidden_layers, grid_size, dropout).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     best_val_loss = float('inf')
@@ -36,7 +37,8 @@ def objective(trial, train_loader, val_loader):
     hidden_dim = trial.suggest_int('hidden_dim', 2, 256)
     grid_size = trial.suggest_int('grid_size', 2, 4)
     dropout = trial.suggest_float('dropout', 0.0, 0.9)
-    best_val_loss = train_model_with_parameters(lr, hidden_layers, hidden_dim, dropout, grid_size, train_loader, val_loader)
+    params = {'lr': lr, 'hidden_layers':hidden_layers, 'grid_size':grid_size, 'dropout':dropout, 'hidden_dim':hidden_dim}
+    best_val_loss = train_model_with_parameters(params, train_loader, val_loader)
     return best_val_loss
 
 # Argument parser

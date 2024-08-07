@@ -10,7 +10,8 @@ from graph_classification_utils import *
 
 from model import KAGIN
 
-def train_model_with_parameters(lr, hidden_layers, hidden_dim, dropout, grid_size, spline_order, train_loader, val_loader, test_loader=None):
+def train_model_with_parameters(params, train_loader, val_loader, test_loader=None):
+    lr, hidden_layers, hidden_dim, dropout, grid_size, spline_order = params['lr'], params['hidden_layers'], params['hidden_dim'], params['dropout'], params['grid_size'], params['spline_order']
     model = KAGIN(args.nb_gnn_layers, dataset_num_features, hidden_dim, dataset.num_classes, hidden_layers, grid_size, spline_order, dropout).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     best_val_loss = float('inf')
@@ -37,7 +38,8 @@ def objective(trial, train_loader, val_loader):
     grid_size = trial.suggest_int('grid_size', 1, 16)
     spline_order = trial.suggest_int('spline_order', 1, 8)
     dropout = trial.suggest_float('dropout', 0.0, 0.5)
-    best_val_loss = train_model_with_parameters(lr, hidden_layers, hidden_dim, dropout, grid_size, spline_order, train_loader, val_loader)
+    params = {'lr': lr, 'hidden_layers':hidden_layers, 'grid_size':grid_size, 'dropout':dropout, 'spline_order':spline_order, 'hidden_dim':hidden_dim}
+    best_val_loss = train_model_with_parameters(params, train_loader, val_loader)
     return best_val_loss
 
 # Argument parser

@@ -19,7 +19,8 @@ parser.add_argument('--epochs', type=int, default=2000, help='Number of epochs t
 parser.add_argument('--patience', type=int, default=20, help='Patience of early stopping')
 args = parser.parse_args()
 
-def train_model_with_parameters(lr, hidden_layers, hidden_dim, dropout, train_loader, val_loader, test_loader=None):
+def train_model_with_parameters(params, train_loader, val_loader, test_loader=None):
+    lr, hidden_layers, hidden_dim, dropout = lr, hidden_layers, hidden_dim, dropout = params['lr'], params['hidden_layers'], params['hidden_dim'], params['dropout']
     model = GIN(args.nb_gnn_layers, dataset_num_features, hidden_dim, hidden_layers, dataset.num_classes, dropout).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     best_val_loss = float('inf')
@@ -43,9 +44,9 @@ def objective(trial, train_loader, val_loader):
     lr = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
     hidden_layers = trial.suggest_int('hidden_layers', 2, 8)
     hidden_dim = trial.suggest_int('hidden_dim', 4, 512)
-    hidden_mlp_layers = trial.suggest_int('hidden_dim', 4, 512)
     dropout = trial.suggest_float('dropout', 0., 0.9)
-    best_val_loss = train_model_with_parameters(lr, hidden_layers, hidden_dim, dropout, train_loader, val_loader)
+    params = {'lr': lr, 'hidden_layers':hidden_layers, 'dropout':dropout, 'hidden_dim':hidden_dim}
+    best_val_loss = train_model_with_parameters(params, train_loader, val_loader)
     return best_val_loss
 
 use_node_attr = False
