@@ -4,6 +4,6 @@ do
     do
         echo "$MODEL"
         echo "$DATASET"
-        bash scripts/$MODEL/$DATASET.sh        
+        bash scripts/$MODEL/$DATASET.sh
     done
 done
