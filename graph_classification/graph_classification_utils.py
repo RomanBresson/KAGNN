@@ -4,7 +4,7 @@ from torch_geometric.datasets import TUDataset
 import torch
 import torch.nn.functional as F
 import optuna
-import numpy as np
+
 
 unlabeled_datasets = ['IMDB-BINARY', 'IMDB-MULTI', 'REDDIT-BINARY', 'REDDIT-MULTI-5K', 'COLLAB']
 
@@ -78,10 +78,11 @@ def count_params(model):
     return(s)
 
 def parameters_finder(trainer_function, objective_function, log_file, splits, dataset, args):
+    all_accs = []
     for random_seed in [123,1234,12345]:
+        test_accs_for_this_seed = []
         all_best_hyperparams = []
         all_best_sizes = []
-        accs = []
         torch.manual_seed(random_seed)
         sampler = optuna.samplers.TPESampler(seed=random_seed)
         for it in range(0,10):
@@ -99,7 +100,7 @@ def parameters_finder(trainer_function, objective_function, log_file, splits, da
             study.optimize(lambda trial: objective_function(trial, train_loader, val_loader), n_trials=100)
             best_hyperparams = study.best_params
 
-            test_accs = []
+            test_accs_for_this_split = []
             for _ in range(3):
                 train_index = splits[it]['model_selection'][0]['train']
                 val_index = splits[it]['model_selection'][0]['validation']
@@ -115,24 +116,40 @@ def parameters_finder(trainer_function, objective_function, log_file, splits, da
 
                 print('---------------- Split {} ----------------'.format(it))
                 test_acc = trainer_function(best_hyperparams, train_loader, val_loader, test_loader)
-                test_accs.append(test_acc)
-
-            accs.append(np.mean(test_accs))
+                test_accs_for_this_split.append(test_acc)
+                print(test_accs_for_this_split)
+            
             all_best_hyperparams.append(best_hyperparams)
-            print(accs)
+            test_accs_tensor = torch.tensor(test_accs_for_this_split)
+            tat_mean = test_accs_tensor.mean().item()
+            tat_std = test_accs_tensor.std().item()
+            test_accs_for_this_seed.append(tat_mean)
+            print(test_accs_for_this_seed)
             print(all_best_hyperparams)
             with open(log_file, 'a') as file:
                 file.write(f'SPLIT {it}\n')
-                file.write(f'Accuracies {accs}\n')
+                file.write(f'Accuracies {test_accs_for_this_seed}\n')
                 file.write(f'Params {all_best_hyperparams}\n')
-                file.write(f'Mean {np.mean(test_accs)}, Std {np.std(test_accs)}\n')
+                file.write(f'Mean {tat_mean}, Std {tat_std}\n')
                 file.write('\n')
 
-        accs = torch.tensor(accs)
+        tensor_accs = torch.tensor(test_accs_for_this_seed)
+        all_accs += test_accs_for_this_seed
         print('---------------- Final Result ----------------')
-        print('Mean: {:7f}, Std: {:7f}'.format(accs.mean(), accs.std()))
+        print('Mean: {:7f}, Std: {:7f}'.format(tensor_accs.mean(), tensor_accs.std()))
         print(all_best_hyperparams)
         with open(log_file, 'a') as file:
             file.write(f'SPLIT {it}\n')
-            file.write(f'Accuracies {accs}\n')
+            file.write(f'Accuracies {tensor_accs}\n')
             file.write(f'Params {all_best_hyperparams}\n\n')
+
+    print('---------------- GLOBAL RESULT ----------------')
+    print(all_accs)
+    tensor_accs = torch.tensor(all_accs)
+    print('Mean: {:7f}, Std: {:7f}'.format(tensor_accs.mean(), tensor_accs.std()))
+    print(all_best_hyperparams)
+    with open(log_file, 'a') as file:
+        file.write(f'GLOBAL\n')
+        file.write(f'Accuracies: {tensor_accs}\n')
+        file.write(f'Mean: {tensor_accs.mean()}, Std: {tensor_accs.std()}\n')
+        file.write(f'Params: {all_best_hyperparams}')
