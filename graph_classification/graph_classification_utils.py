@@ -1,7 +1,9 @@
 from torch_geometric.utils import degree
+from torch_geometric.loader import DataLoader
 from torch_geometric.datasets import TUDataset
 import torch
 import torch.nn.functional as F
+import optuna
 
 unlabeled_datasets = ['IMDB-BINARY', 'IMDB-MULTI', 'REDDIT-BINARY', 'REDDIT-MULTI-5K', 'COLLAB']
 
@@ -21,7 +23,6 @@ class EarlyStopper:
             if self.counter >= self.patience:
                 return True
         return False
-
 
 class Degree(object):
     def __call__(self, data):
@@ -50,7 +51,6 @@ def train(model, loader, optimizer, device):
         optimizer.step()
     return loss_all / len(loader.dataset)
 
-
 def val(model, loader, device):
     model.eval()
     loss_all = 0
@@ -59,7 +59,6 @@ def val(model, loader, device):
         data = data.to(device)
         loss_all += F.nll_loss(model(data), data.y, reduction='sum').item()
     return loss_all / len(loader.dataset)
-
 
 def test(model, loader, device):
     model.eval()
@@ -76,3 +75,63 @@ def count_params(model):
     for k in model.parameters():
         s+= torch.prod(torch.tensor(k.shape))
     return(s)
+
+def parameters_finder(trainer_function, objective_function, log_file, splits, dataset, args):
+    for random_seed in [123,1234,12345]:
+        all_best_hyperparams = []
+        all_best_sizes = []
+        accs = []
+        torch.manual_seed(random_seed)
+        sampler = optuna.samplers.TPESampler(seed=random_seed)
+        for it in range(0,10):
+            torch.cuda.empty_cache()
+            train_index = splits[it]['model_selection'][0]['train']
+            val_index = splits[it]['model_selection'][0]['validation']
+
+            val_dataset = dataset[val_index]
+            train_dataset = dataset[train_index]
+
+            val_loader = DataLoader(val_dataset, batch_size=args.batch_size)
+            train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+
+            study = optuna.create_study(sampler=sampler)
+            study.optimize(lambda trial: objective_function(trial, train_loader, val_loader), n_trials=100)
+            best_hyperparams = study.best_params
+
+            test_accs = []
+            for _ in range(3):
+                train_index = splits[it]['model_selection'][0]['train']
+                val_index = splits[it]['model_selection'][0]['validation']
+                test_index = splits[it]['test']
+
+                test_dataset = dataset[test_index]
+                val_dataset = dataset[val_index]
+                train_dataset = dataset[train_index]
+
+                val_loader = DataLoader(val_dataset, batch_size=args.batch_size)
+                test_loader = DataLoader(test_dataset, batch_size=args.batch_size)
+                train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+
+                print('---------------- Split {} ----------------'.format(it))
+                test_acc = trainer_function(best_hyperparams['lr'], best_hyperparams['hidden_layers'], best_hyperparams['hidden_dim'], best_hyperparams['dropout'], best_hyperparams['grid_size'], best_hyperparams['spline_order'], train_loader, val_loader, test_loader)
+                test_accs.append(test_acc)
+
+            accs.append(np.mean(test_accs))
+            all_best_hyperparams.append(best_hyperparams)
+            print(accs)
+            print(all_best_hyperparams)
+            with open(log_file, 'a') as file:
+                file.write(f'SPLIT {it}\n')
+                file.write(f'Accuracies {accs}\n')
+                file.write(f'Params {all_best_hyperparams}\n')
+                file.write(f'Mean {np.mean(test_accs)}, Std {np.std(test_accs)}\n')
+                file.write('\n')
+
+        accs = torch.tensor(accs)
+        print('---------------- Final Result ----------------')
+        print('Mean: {:7f}, Std: {:7f}'.format(accs.mean(), accs.std()))
+        print(all_best_hyperparams)
+        with open(log_file, 'a') as file:
+            file.write(f'SPLIT {it}\n')
+            file.write(f'Accuracies {accs}\n')
+            file.write(f'Params {all_best_hyperparams}\n\n')
