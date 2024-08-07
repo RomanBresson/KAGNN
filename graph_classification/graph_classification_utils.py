@@ -1,6 +1,5 @@
 from torch_geometric.utils import degree
 from torch_geometric.loader import DataLoader
-from torch_geometric.datasets import TUDataset
 import torch
 import torch.nn.functional as F
 import optuna

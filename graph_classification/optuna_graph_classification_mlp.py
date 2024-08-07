@@ -1,13 +1,8 @@
 import argparse
 import json
-import numpy as np
-import optuna
-
 import torch
-from torch_geometric.loader import DataLoader
-
 from graph_classification_utils import *
-
+from torch_geometric.datasets import TUDataset
 from model import GIN
 
 # Argument parser
