@@ -1,18 +1,28 @@
 import argparse
-import json
 import torch
-from graph_classification_utils import *
-from torch_geometric.datasets import TUDataset
+from graph_classification_utils import parameters_finder, EarlyStopper, val, test, train, get_data_and_splits
 from model import FASTKAGIN
+
+# Argument parser
+parser = argparse.ArgumentParser(description='KAGIN')
+parser.add_argument('--dataset', default='MUTAG', help='Dataset name')
+parser.add_argument('--batch-size', type=int, default=64, help='Input batch size for training')
+parser.add_argument('--nb_gnn_layers', type=int, default=4, help='Number of message passing layers')
+parser.add_argument('--epochs', type=int, default=2000, help='Number of epochs to train')
+parser.add_argument('--patience', type=int, default=20, help='Patience of early stopping')
+args = parser.parse_args()
+
+device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+print(device)
 
 def train_model_with_parameters(params, train_loader, val_loader, test_loader=None):
     lr, hidden_layers, hidden_dim, dropout, grid_size = params['lr'], params['hidden_layers'], params['hidden_dim'], params['dropout'], params['grid_size']
-    model = FASTKAGIN(args.nb_gnn_layers, dataset_num_features, hidden_dim, dataset.num_classes, hidden_layers, grid_size, dropout).to(device)
+    model = FASTKAGIN(args.nb_gnn_layers, train_loader.dataset.num_features, hidden_dim, dataset.num_classes, hidden_layers, grid_size, dropout).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     best_val_loss = float('inf')
     early_stopper = EarlyStopper(patience=args.patience)
     for epoch in range(1, args.epochs+1):
-        train_loss = train(model, train_loader, optimizer, device)
+        train(model, train_loader, optimizer, device)
         val_loss = val(model, val_loader, device)
         if best_val_loss >= val_loss:
             best_val_loss = val_loss 
@@ -36,34 +46,7 @@ def objective(trial, train_loader, val_loader):
     best_val_loss = train_model_with_parameters(params, train_loader, val_loader)
     return best_val_loss
 
-# Argument parser
-parser = argparse.ArgumentParser(description='FASTKAGIN')
-parser.add_argument('--dataset', default='MUTAG', help='Dataset name')
-parser.add_argument('--batch-size', type=int, default=64, help='Input batch size for training')
-parser.add_argument('--nb_gnn_layers', type=int, default=4, help='Number of message passing layers')
-parser.add_argument('--epochs', type=int, default=2000, help='Number of epochs to train')
-parser.add_argument('--patience', type=int, default=20, help='Patience of early stopping')
-args = parser.parse_args()
-
-use_node_attr = False
-if args.dataset == 'ENZYMES' or args.dataset == 'PROTEINS_full':
-    use_node_attr = True
-
-if args.dataset in unlabeled_datasets:
-    dataset = TUDataset(root='datasets/'+args.dataset, name=args.dataset, transform=Degree())
-else:
-    dataset = TUDataset(root='datasets/'+args.dataset, name=args.dataset, use_node_attr=use_node_attr)
-
-dataset_num_features = dataset[0].x.shape[1]
-
-with open('data_splits/'+args.dataset+'_splits.json','rt') as f:
-    for line in f:
-        splits = json.loads(line)
-
-device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-
-print(device)
-
 log_file = f'logs/FASTKAN_{args.dataset}'
 
+splits, dataset = get_data_and_splits(args)
 parameters_finder(train_model_with_parameters, objective, log_file, splits, dataset, args)

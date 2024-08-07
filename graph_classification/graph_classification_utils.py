@@ -1,9 +1,10 @@
+import json
 from torch_geometric.utils import degree
 from torch_geometric.loader import DataLoader
+from torch_geometric.datasets import TUDataset
 import torch
 import torch.nn.functional as F
 import optuna
-
 
 unlabeled_datasets = ['IMDB-BINARY', 'IMDB-MULTI', 'REDDIT-BINARY', 'REDDIT-MULTI-5K', 'COLLAB']
 
@@ -74,7 +75,20 @@ def count_params(model):
     s = 0
     for k in model.parameters():
         s+= torch.prod(torch.tensor(k.shape))
-    return(s)
+    return s 
+
+def get_data_and_splits(args):
+    use_node_attr = False
+    if args.dataset == 'ENZYMES' or args.dataset == 'PROTEINS_full':
+        use_node_attr = True
+    if args.dataset in unlabeled_datasets:
+        dataset = TUDataset(root='datasets/'+args.dataset, name=args.dataset, transform=Degree())
+    else:
+        dataset = TUDataset(root='datasets/'+args.dataset, name=args.dataset, use_node_attr=use_node_attr)
+    with open('data_splits/'+args.dataset+'_splits.json','rt') as f:
+        for line in f:
+            splits = json.loads(line)
+    return(splits, dataset)
 
 def parameters_finder(trainer_function, objective_function, log_file, splits, dataset, args):
     all_accs = []
