@@ -96,7 +96,6 @@ def parameters_finder(trainer_function, objective_function, log_file, args):
     splits, dataset = get_data_and_splits(args)
     test_accs_for_this_seed = []
     all_best_hyperparams = []
-    all_best_sizes = []
     for it in range(0,10):
         torch.cuda.empty_cache()
         train_index = splits[it]['model_selection'][0]['train']

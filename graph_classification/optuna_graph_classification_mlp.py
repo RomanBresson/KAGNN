@@ -2,7 +2,7 @@ import random
 import numpy as np
 import argparse
 import torch
-from graph_classification_utils import parameters_finder, EarlyStopper, val, test, train, get_data_and_splits
+from graph_classification_utils import parameters_finder, EarlyStopper, val, test, train
 from models import GIN
 
 # Argument parser
@@ -15,13 +15,14 @@ parser.add_argument('--patience', type=int, default=20, help='Patience of early 
 parser.add_argument('--random_seed', type=int, default=12345, help='Random seed')
 args = parser.parse_args()
 
+#Uncomment for machine-wise reproducibility, using "export CUBLAS_WORKSPACE_CONFIG=:4096:8"
 random.seed(args.random_seed)
 np.random.seed(args.random_seed)
 torch.manual_seed(args.random_seed)
 torch.cuda.manual_seed(args.random_seed)
 torch.cuda.manual_seed_all(args.random_seed)
-torch.backends.cudnn.benchmark = False
-torch.use_deterministic_algorithms(True) #Uncomment for reproducibility, using "export CUBLAS_WORKSPACE_CONFIG=:4096:8"
+#torch.backends.cudnn.benchmark = False
+#torch.use_deterministic_algorithms(True)
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 print(device)
@@ -33,7 +34,7 @@ def train_model_with_parameters(params, train_loader, val_loader, test_loader=No
     best_val_loss = float('inf')
     early_stopper = EarlyStopper(patience=args.patience)
     for epoch in range(1, args.epochs+1):
-        tr = train(model, train_loader, optimizer, device)
+        train(model, train_loader, optimizer, device)
         val_loss = val(model, val_loader, device)
         if best_val_loss >= val_loss:
             best_val_loss = val_loss
