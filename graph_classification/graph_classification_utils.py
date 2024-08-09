@@ -1,3 +1,4 @@
+import os
 import json
 from torch_geometric.utils import degree
 from torch_geometric.loader import DataLoader
@@ -84,7 +85,7 @@ def get_data_and_splits(args):
         dataset = TUDataset(root='datasets/'+args.dataset, name=args.dataset, transform=Degree())
     else:
         dataset = TUDataset(root='datasets/'+args.dataset, name=args.dataset, use_node_attr=use_node_attr)
-    with open('data_splits/'+args.dataset+'_splits.json','rt') as f:
+    with open(os.path.join('data_splits',args.dataset+'_splits.json'),'rt') as f:
         for line in f:
             splits = json.loads(line)
     return(splits, dataset)
@@ -125,7 +126,7 @@ def parameters_finder(trainer_function, objective_function, log_file, args):
             test_loader = DataLoader(test_dataset, batch_size=args.batch_size)
             train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 
-            print('---------------- Split {} ----------------'.format(it))
+            print(f'---------------- Split {it} ----------------')
             test_acc = trainer_function(best_hyperparams, train_loader, val_loader, test_loader)
             test_accs_for_this_split.append(test_acc)
             print(test_accs_for_this_split)
@@ -147,9 +148,10 @@ def parameters_finder(trainer_function, objective_function, log_file, args):
     tensor_accs = torch.tensor(test_accs_for_this_seed)
     all_accs += test_accs_for_this_seed
     print('---------------- Final Result ----------------')
-    print('Mean: {:7f}, Std: {:7f}'.format(tensor_accs.mean(), tensor_accs.std()))
+    print(f'Mean: {tensor_accs.mean()}, Std: {tensor_accs.std()}\n')
     print(all_best_hyperparams)
     with open(log_file, 'a') as file:
         file.write(f'SPLIT {it}\n')
         file.write(f'Accuracies {tensor_accs}\n')
         file.write(f'Params {all_best_hyperparams}\n\n')
+        file.write(f'Mean: {tensor_accs.mean()}, Std: {tensor_accs.std()}\n')
