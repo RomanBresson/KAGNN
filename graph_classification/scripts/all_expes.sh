@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-for DATASET in IMDB-B IMDB-M DD ENZYMES NCI1
+for DATASET in MUTAG PROTEINS_full IMDB-B IMDB-M DD ENZYMES NCI1
 do
-    for MODEL in mlp fastkan
+    for MODEL in mlp fastkan kan
     do
         echo "$MODEL"
         echo "$DATASET"

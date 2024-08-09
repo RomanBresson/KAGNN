@@ -75,7 +75,7 @@ def count_params(model):
     s = 0
     for k in model.parameters():
         s+= torch.prod(torch.tensor(k.shape))
-    return s 
+    return s
 
 def get_data_and_splits(args):
     use_node_attr = False
