@@ -1,13 +1,12 @@
-import torch
-from ogb.graphproppred import PygGraphPropPredDataset
-from torch_geometric.utils import to_dense_adj
-from models import GKAN_Nodes, GNN_Nodes
-import numpy as np
 from typing import Union
+import random
+import time
+import numpy as np
+import torch
 import torch_geometric as pyg
 from torch.optim import Optimizer
-import random 
-import time 
+import numpy as np
+from models import GKAN_Nodes, GNN_Nodes, GFASTKAN_Nodes
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 

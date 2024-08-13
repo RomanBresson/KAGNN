@@ -1,22 +1,19 @@
-
 # Install required packages.
 import os
-
-from torch_geometric.datasets import Planetoid
-from torch_geometric.transforms import NormalizeFeatures
-
-import torch
-from ogb.nodeproppred import PygNodePropPredDataset
-from torch_geometric.datasets import Actor, WebKB
-from utils import set_seed, experiment_node_class
-from models import GNN_Nodes
+import json
 import numpy as np
 import optuna
-import json
-from optuna.trial import Trial
+import torch
 import torch_geometric as pyg
+from torch_geometric.datasets import Planetoid
+from torch_geometric.transforms import NormalizeFeatures
+from torch_geometric.datasets import Actor, WebKB
+from ogb.nodeproppred import PygNodePropPredDataset
+from utils import set_seed, experiment_node_class
+from optuna.trial import Trial
+from models import GNN_Nodes
 
-def objective( trial: Trial,
+def objective(trial: Trial,
               data: pyg.data.Data,
               dataset_name: str,
               dataset: pyg.data.Dataset,
@@ -57,8 +54,6 @@ def train_and_evaluate_model(hidden_channels: int,
         train_mask[split_idx['train']] = True
         valid_mask[split_idx['valid']] = True
         test_mask[split_idx['test']] = True
-        best_val_acc_full = []
-        best_test_acc_full = []
         model = GNN_Nodes(conv_type=conv_type, mp_layers=mp_layers, num_features=dataset.num_features,
                 hidden_channels=hidden_channels, num_classes=dataset.num_classes, skip=skip, hidden_layers=hidden_layers).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=regularizer)
@@ -67,8 +62,6 @@ def train_and_evaluate_model(hidden_channels: int,
         train_mask = data.train_mask
         valid_mask = data.val_mask
         test_mask = data.test_mask
-        best_val_acc_full = []
-        best_test_acc_full = []
         model = GNN_Nodes(conv_type=conv_type, mp_layers=mp_layers, num_features=dataset.num_features,
                 hidden_channels=hidden_channels, num_classes=dataset.num_classes, skip=skip, hidden_layers=hidden_layers).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=regularizer)
@@ -87,7 +80,6 @@ def train_and_evaluate_model(hidden_channels: int,
             best_val_acc_full.append(best_val_acc)
             best_test_acc_full.append(best_test_acc)
         best_val_acc = np.mean(best_val_acc_full)
-    print(best_test_acc)
     return best_val_acc
 
 def main():
@@ -115,7 +107,7 @@ def main():
             log =f'results/best_params_mlp_{conv_type}_{dataset_name}.json'
             data = data.to(device)
             study = optuna.create_study(direction='minimize')
-            study.optimize(lambda trial: objective(trial, data, dataset_name, dataset,  conv_type ,skip, n_epochs, device), n_trials=n_trials)
+            study.optimize(lambda trial: objective(trial, data, dataset_name, dataset, conv_type, skip, n_epochs, device), n_trials=n_trials)
             best_params =  study.best_params
             with open(log, 'w') as f:
                 json.dump(best_params, f)
