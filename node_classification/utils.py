@@ -56,24 +56,22 @@ def experiment_node_class(train_mask: torch.tensor,
                           criterion: torch.nn.CrossEntropyLoss, 
                           n_epochs:int, 
                           patience: int = 50):
-    best_val_acc = 0 
+    best_val_loss = torch.inf
     best_test_acc = 0
     early_stopping = 0
     t = time.time()
     # write the results in a file wicth the dataset name on it 
-    for epoch in range(n_epochs):
-        _ = train_node_class(train_mask, model, data, optimizer, criterion)
-
-        val_acc = test_node_class(valid_mask, model, data)
-
-        if val_acc > best_val_acc:
+    for _ in range(n_epochs):
+        _, output = train_node_class(train_mask, model, data, optimizer, criterion)
+        val_loss = criterion(output[valid_mask], data.y[valid_mask])
+        if val_loss < best_val_loss:
             early_stopping=0
-            best_val_acc = val_acc
+            best_val_loss = val_loss
             best_test_acc = test_node_class(test_mask, model, data)
         else:
             early_stopping += 1
             if early_stopping > patience:
                 print("early stopping..")
                 break
-    
-    return best_val_acc, best_test_acc, time.time()-t
+
+    return best_val_loss, best_test_acc, time.time()-t
