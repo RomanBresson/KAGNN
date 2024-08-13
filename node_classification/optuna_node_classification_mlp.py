@@ -16,8 +16,6 @@ import json
 from optuna.trial import Trial
 import torch_geometric as pyg
 
-
-
 def objective( trial: Trial, 
               data: pyg.data.Data, 
               dataset_name: str, 
@@ -143,8 +141,8 @@ def main():
             
             data = data.to(device) 
              
-            study = optuna.create_study(direction='maximize') 
-            study.optimize(lambda trial: objective(trial, data, dataset_name, dataset,  conv_type ,skip, n_epochs, device ), n_trials=n_trials) 
+            study = optuna.create_study(direction='minimize')
+            study.optimize(lambda trial: objective(trial, data, dataset_name, dataset,  conv_type ,skip, n_epochs, device), n_trials=n_trials)
             
             best_params =  study.best_params
 
