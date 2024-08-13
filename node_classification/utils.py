@@ -35,7 +35,7 @@ def train_node_class(mask: torch.tensor,
       loss = criterion(out[mask], data.y[mask])  # Compute the loss solely based on the training nodes.
       loss.backward()  # Derive gradients.
       optimizer.step()  # Update parameters based on gradients.
-      return loss
+      return loss, out
 
 def test_node_class(mask: torch.tensor, 
                     model:Union[GKAN_Nodes,GNN_Nodes], 

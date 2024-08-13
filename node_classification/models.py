@@ -2,7 +2,7 @@ from ekan import KAN as eKAN
 from fastkan import FastKAN
 import torch
 
-from torch.nn import Sequential
+import torch.nn as nn
 from torch_geometric.nn import GINConv, GCNConv
 from torch_geometric.nn.dense.linear import Linear
 from torch_geometric.typing import (
@@ -32,7 +32,7 @@ def make_mlp(num_features, hidden_dim, out_dim, hidden_layers, batch_norm=True):
 
 def make_kan(num_features, hidden_dim, out_dim, hidden_layers, grid_size, spline_order):
     sizes = [num_features] + [hidden_dim]*(hidden_layers-2) + [out_dim]
-    return(KAN(layers_hidden=sizes, grid_size=grid_size, spline_order=spline_order))
+    return(eKAN(layers_hidden=sizes, grid_size=grid_size, spline_order=spline_order))
 
 def make_fastkan(num_features, hidden_dim, out_dim, hidden_layers, grid_size):
     sizes = [num_features] + [hidden_dim]*(hidden_layers-2) + [out_dim]
@@ -73,7 +73,6 @@ class GIFASTKANLayer(GINConv):
     def __init__(self, in_feat:int,
                  out_feat:int,
                  grid_size:int=4,
-                 spline_order:int=3,
                  hidden_dim:int=16,
                  nb_layers:int=2):
         kan = make_fastkan(in_feat, hidden_dim, out_feat, nb_layers, grid_size)
@@ -86,7 +85,7 @@ class GNN_Nodes(torch.nn.Module):
                  hidden_channels:int,
                  num_classes:int,
                  skip:bool = True,
-                 nb_hidden_layers:int=2):
+                 hidden_layers:int=2):
         super().__init__()
         self.convs = torch.nn.ModuleList()
         for i in range(num_layers-1):
@@ -129,7 +128,7 @@ class GKAN_Nodes(torch.nn.Module):
                  skip:bool = True,
                  grid_size:int = 4,
                  spline_order:int = 3,
-                 nb_hidden_layers:int=2):
+                 hidden_layers:int=2):
         super().__init__()
         self.convs = torch.nn.ModuleList()
         for i in range(num_layers-1):
@@ -172,7 +171,7 @@ class GFASTKAN_Nodes(torch.nn.Module):
                  skip:bool = True,
                  grid_size:int = 4,
                  spline_order:int = 3,
-                 nb_hidden_layers:int=2):
+                 hidden_layers:int=2):
         super().__init__()
         self.convs = torch.nn.ModuleList()
         for i in range(num_layers-1):
