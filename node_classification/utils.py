@@ -47,10 +47,6 @@ def test_node_class(mask: torch.tensor,
       acc = int(correct.sum()) / int(mask.sum())  # Derive ratio of correct predictions.
       return acc
 
-
-
-
-
 def experiment_node_class(train_mask: torch.tensor, 
                           valid_mask: torch.tensor, 
                           test_mask: torch.tensor, 
