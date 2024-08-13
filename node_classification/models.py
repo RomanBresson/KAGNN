@@ -80,7 +80,7 @@ class GIFASTKANLayer(GINConv):
 
 class GNN_Nodes(torch.nn.Module):
     def __init__(self,  conv_type :str,
-                 num_layers:int,
+                 mp_layers:int,
                  num_features:int,
                  hidden_channels:int,
                  num_classes:int,
@@ -88,7 +88,7 @@ class GNN_Nodes(torch.nn.Module):
                  hidden_layers:int=2):
         super().__init__()
         self.convs = torch.nn.ModuleList()
-        for i in range(num_layers-1):
+        for i in range(mp_layers-1):
             if i ==0:
                 if conv_type == "gcn":
                     self.convs.append(GCNConv(num_features, hidden_channels))
@@ -100,7 +100,7 @@ class GNN_Nodes(torch.nn.Module):
                 else:
                     self.convs.append(GINConv(make_mlp(hidden_channels, hidden_channels, hidden_channels, hidden_layers, False)))
         self.skip = skip
-        dim_out_message_passing = num_features+(num_layers-1)*hidden_channels if skip else hidden_channels
+        dim_out_message_passing = num_features+(mp_layers-1)*hidden_channels if skip else hidden_channels
         if conv_type == "gcn":
             self.conv_out = GCNConv(dim_out_message_passing, num_classes)
         else:
@@ -121,7 +121,7 @@ class GNN_Nodes(torch.nn.Module):
 
 class GKAN_Nodes(torch.nn.Module):
     def __init__(self,  conv_type :str,
-                 num_layers:int,
+                 mp_layers:int,
                  num_features:int,
                  hidden_channels:int,
                  num_classes:int,
@@ -131,7 +131,7 @@ class GKAN_Nodes(torch.nn.Module):
                  hidden_layers:int=2):
         super().__init__()
         self.convs = torch.nn.ModuleList()
-        for i in range(num_layers-1):
+        for i in range(mp_layers-1):
             if i ==0:
                 if conv_type == "gcn":
                     self.convs.append(GCKANLayer(num_features, hidden_channels, grid_size, spline_order))
@@ -143,7 +143,7 @@ class GKAN_Nodes(torch.nn.Module):
                 else:
                     self.convs.append(GIKANLayer(make_kan(hidden_channels, hidden_channels, hidden_channels, hidden_layers, grid_size, spline_order)))
         self.skip = skip
-        dim_out_message_passing = num_features+(num_layers-1)*hidden_channels if skip else hidden_channels
+        dim_out_message_passing = num_features+(mp_layers-1)*hidden_channels if skip else hidden_channels
         if conv_type == "gcn":
             self.conv_out = GCKANLayer(dim_out_message_passing, num_classes, grid_size, spline_order)
         else:
@@ -164,7 +164,7 @@ class GKAN_Nodes(torch.nn.Module):
 
 class GFASTKAN_Nodes(torch.nn.Module):
     def __init__(self,  conv_type :str,
-                 num_layers:int,
+                 mp_layers:int,
                  num_features:int,
                  hidden_channels:int,
                  num_classes:int,
@@ -174,7 +174,7 @@ class GFASTKAN_Nodes(torch.nn.Module):
                  hidden_layers:int=2):
         super().__init__()
         self.convs = torch.nn.ModuleList()
-        for i in range(num_layers-1):
+        for i in range(mp_layers-1):
             if i ==0:
                 if conv_type == "gcn":
                     self.convs.append(GCFASTKANLayer(num_features, hidden_channels, grid_size+1))
@@ -186,7 +186,7 @@ class GFASTKAN_Nodes(torch.nn.Module):
                 else:
                     self.convs.append(GIFASTKANLayer(make_fastkan(hidden_channels, hidden_channels, hidden_channels, hidden_layers, grid_size+1)))
         self.skip = skip
-        dim_out_message_passing = num_features+(num_layers-1)*hidden_channels if skip else hidden_channels
+        dim_out_message_passing = num_features+(mp_layers-1)*hidden_channels if skip else hidden_channels
         if conv_type == "gcn":
             self.conv_out = GCFASTKANLayer(dim_out_message_passing, num_classes, grid_size+1)
         else:
