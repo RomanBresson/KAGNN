@@ -136,12 +136,12 @@ class GKAN_Nodes(torch.nn.Module):
                 if conv_type == "gcn":
                     self.convs.append(GCKANLayer(num_features, hidden_channels, grid_size, spline_order))
                 else:
-                    self.convs.append(GIKANLayer(make_kan(num_features, hidden_channels, hidden_channels, hidden_layers, grid_size, spline_order)))
+                    self.convs.append(GIKANLayer(num_features, hidden_channels, grid_size, spline_order,  hidden_channels, hidden_layers))
             else:
                 if conv_type == "gcn":
                     self.convs.append(GCKANLayer(hidden_channels, hidden_channels, grid_size, spline_order))
                 else:
-                    self.convs.append(GIKANLayer(make_kan(hidden_channels, hidden_channels, hidden_channels, hidden_layers, grid_size, spline_order)))
+                    self.convs.append(GIKANLayer(hidden_channels, hidden_channels, grid_size, spline_order,  hidden_channels, hidden_layers))
         self.skip = skip
         dim_out_message_passing = num_features+(mp_layers-1)*hidden_channels if skip else hidden_channels
         if conv_type == "gcn":
@@ -170,21 +170,20 @@ class GFASTKAN_Nodes(torch.nn.Module):
                  num_classes:int,
                  skip:bool = True,
                  grid_size:int = 4,
-                 spline_order:int = 3,
                  hidden_layers:int=2):
         super().__init__()
         self.convs = torch.nn.ModuleList()
         for i in range(mp_layers-1):
             if i ==0:
                 if conv_type == "gcn":
-                    self.convs.append(GCFASTKANLayer(num_features, hidden_channels, grid_size+1))
+                    self.convs.append(GCFASTKANLayer(num_features, hidden_channels, grid_size))
                 else:
-                    self.convs.append(GIFASTKANLayer(make_fastkan(num_features, hidden_channels, hidden_channels, hidden_layers, grid_size+1, spline_order)))
+                    self.convs.append(GIFASTKANLayer(num_features, hidden_channels, grid_size, hidden_channels, hidden_layers))
             else:
                 if conv_type == "gcn":
-                    self.convs.append(GCFASTKANLayer(hidden_channels, hidden_channels, grid_size+1))
+                    self.convs.append(GCFASTKANLayer(hidden_channels, hidden_channels, grid_size))
                 else:
-                    self.convs.append(GIFASTKANLayer(make_fastkan(hidden_channels, hidden_channels, hidden_channels, hidden_layers, grid_size+1)))
+                    self.convs.append(GIFASTKANLayer(hidden_channels, hidden_channels, grid_size, hidden_channels, hidden_layers))
         self.skip = skip
         dim_out_message_passing = num_features+(mp_layers-1)*hidden_channels if skip else hidden_channels
         if conv_type == "gcn":
