@@ -28,10 +28,8 @@ def objective( trial: Trial,
     lr = trial.suggest_float('lr', 0.001, 0.01, log=True)
     hidden_layers = trial.suggest_int('hidden_layers', 1, 4)
     regularizer = trial.suggest_float('regularizer', 0, 5e-4)
-
     accuracy = train_and_evaluate_model(hidden_channels, lr, hidden_layers, regularizer, data, dataset_name, dataset,
                                conv_type, skip, n_epochs, device )
-
     return accuracy
 
 def train_and_evaluate_model(hidden_channels: int,
@@ -49,15 +47,12 @@ def train_and_evaluate_model(hidden_channels: int,
     best_test_acc_full = []
     criterion =  torch.nn.CrossEntropyLoss()
     mp_layers = 4 #TODO ADAPT
-
     if dataset_name == 'ogbn-arxiv':
         split_idx = dataset.get_idx_split()
-
         data = data.to(device)
         test_mask = torch.zeros(data.num_nodes, dtype=torch.bool).squeeze().to(device)
         valid_mask  = torch.zeros(data.num_nodes, dtype=torch.bool).squeeze().to(device)
         train_mask  = torch.zeros(data.num_nodes, dtype=torch.bool).squeeze().to(device)
-
         data.y = data.y.squeeze()
         train_mask[split_idx['train']] = True
         valid_mask[split_idx['valid']] = True
@@ -127,4 +122,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
