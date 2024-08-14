@@ -25,9 +25,9 @@ def objective(trial: Trial,
     lr = trial.suggest_float('lr', 1e-3, 1e-1, log=True)
     hidden_layers = trial.suggest_int('hidden_layers', 1, 4)
     regularizer = trial.suggest_float('regularizer', 0, 5e-4)
-    accuracy = train_and_evaluate_model(hidden_channels, lr, hidden_layers, regularizer, data, dataset_name, dataset,
+    val_loss = train_and_evaluate_model(hidden_channels, lr, hidden_layers, regularizer, data, dataset_name, dataset,
                                conv_type, skip, n_epochs, device)[0]
-    return accuracy
+    return val_loss
 
 def train_and_evaluate_model(hidden_channels: int,
                              lr: float,
@@ -59,6 +59,7 @@ def train_and_evaluate_model(hidden_channels: int,
         optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=regularizer)
         best_val_loss, best_test_acc, time_ = experiment_node_class(train_mask,  valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
     elif dataset_name in ['Cora', 'CiteSeer']:
+        mp_layers = 2
         train_mask = data.train_mask
         valid_mask = data.val_mask
         test_mask = data.test_mask
@@ -91,8 +92,8 @@ def main():
     if not os.path.exists('data'):
         os.makedirs('data')
     set_seed(1)
-    for dataset_name in ['Cora','CiteSeer', 'Actor','Texas','Cornell','Wisconsin', 'ogbn-arxiv']:
-        for conv_type in ['gin','gcn']:
+    for dataset_name in ['Cora', 'CiteSeer', 'Actor', 'Texas', 'Cornell', 'Wisconsin', 'ogbn-arxiv']:
+        for conv_type in ['gcn','gin']:
             print(dataset_name+ " "+conv_type)
             torch.cuda.empty_cache()
             if dataset_name == 'ogbn-arxiv':
@@ -105,7 +106,7 @@ def main():
             else:
                 dataset = WebKB(root='data/'+dataset_name, name=dataset_name, transform=NormalizeFeatures())
             data = dataset[0]
-            log =f'results/best_params_mlp_{conv_type}_{dataset_name}.json'
+            log = f'results/best_params_mlp_{conv_type}_{dataset_name}.json'
             data = data.to(device)
             study = optuna.create_study(direction='minimize')
             study.optimize(lambda trial: objective(trial, data, dataset_name, dataset, conv_type, skip, n_epochs, device), n_trials=n_trials)

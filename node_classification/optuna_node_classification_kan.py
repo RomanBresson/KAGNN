@@ -27,9 +27,9 @@ def objective( trial: Trial,
     lr = trial.suggest_float('lr', 0.001, 0.01, log=True)
     hidden_layers = trial.suggest_int('hidden_layers', 1, 4)
     regularizer = trial.suggest_float('regularizer', 0, 5e-4)
-    accuracy = train_and_evaluate_model(spline_order, hidden_channels, lr, hidden_layers, regularizer, data, dataset_name, dataset,
-                               conv_type, skip, grid_size, n_epochs, device)
-    return accuracy
+    val_loss = train_and_evaluate_model(spline_order, hidden_channels, lr, hidden_layers, regularizer, data, dataset_name, dataset,
+                               conv_type, skip, grid_size, n_epochs, device)[0]
+    return val_loss
 
 def train_and_evaluate_model(spline_order: int,
                              hidden_channels: int,
@@ -44,13 +44,12 @@ def train_and_evaluate_model(spline_order: int,
                              grid_size: int,
                              n_epochs: int,
                              device: str = "cuda") -> float:
-    best_val_acc_full = []
+    best_val_loss_full = []
     best_test_acc_full = []
     criterion =  torch.nn.CrossEntropyLoss()
-    mp_layers = 2 #TODO ADAPT
     if dataset_name == 'ogbn-arxiv':
         split_idx = dataset.get_idx_split()
-        data = data.to(device) 
+        data = data.to(device)
         test_mask = torch.zeros(data.num_nodes, dtype=torch.bool).squeeze().to(device)
         valid_mask  = torch.zeros(data.num_nodes, dtype=torch.bool).squeeze().to(device)
         train_mask  = torch.zeros(data.num_nodes, dtype=torch.bool).squeeze().to(device)
@@ -61,17 +60,18 @@ def train_and_evaluate_model(spline_order: int,
         model = GKAN_Nodes(conv_type=conv_type, mp_layers=mp_layers, num_features=dataset.num_features, hidden_channels= hidden_channels,
                 num_classes=dataset.num_classes, skip=skip, grid_size=grid_size, spline_order=spline_order, hidden_layers=hidden_layers).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=regularizer)
-        best_val_acc, best_test_acc, time_ = experiment_node_class(train_mask,  valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
+        best_val_loss, best_test_acc, time_ = experiment_node_class(train_mask,  valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
     elif dataset_name in ['Cora', 'CiteSeer']:
+        mp_layers = 2
         train_mask = data.train_mask
         valid_mask = data.val_mask
         test_mask = data.test_mask
         model = GKAN_Nodes(conv_type=conv_type, mp_layers=mp_layers, num_features=dataset.num_features, hidden_channels= hidden_channels,
                 num_classes=dataset.num_classes, skip=skip, grid_size=grid_size, spline_order=spline_order, hidden_layers=hidden_layers).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=regularizer)
-        best_val_acc, best_test_acc, time_ = experiment_node_class(train_mask,  valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
+        best_val_loss, best_test_acc, time_ = experiment_node_class(train_mask,  valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
     else:
-        best_val_acc_full = []
+        best_val_loss_full = []
         best_test_acc_full = []
         for sim in range(len(data.train_mask[0])):
             model = GKAN_Nodes(conv_type=conv_type, mp_layers=mp_layers, num_features=dataset.num_features, hidden_channels= hidden_channels,
@@ -80,11 +80,12 @@ def train_and_evaluate_model(spline_order: int,
             train_mask = data.train_mask[:,sim]
             valid_mask = data.val_mask[:,sim]
             test_mask = data.test_mask[:,sim]
-            best_val_acc, best_test_acc, time_ = experiment_node_class(train_mask, valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
-            best_val_acc_full.append(best_val_acc)
+            best_val_loss, best_test_acc, time_ = experiment_node_class(train_mask, valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
+            best_val_loss_full.append(best_val_loss)
             best_test_acc_full.append(best_test_acc)
-        best_val_acc = np.mean(best_val_acc_full)
-    return best_val_acc
+        best_val_loss = np.mean(best_val_loss_full)
+        best_test_acc = np.mean(best_test_acc_full)
+    return best_val_loss, best_test_acc, time_
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -94,8 +95,8 @@ def main():
     if not os.path.exists('data'):
         os.makedirs('data')
     set_seed(1)
-    for dataset_name in ['Cora', 'CiteSeer', 'Actor', 'Texas','Cornell','Wisconsin', 'ogbn-arxiv']:
-        for conv_type in ['gin','gcn']:                     
+    for dataset_name in ['Cora', 'CiteSeer', 'Actor', 'Texas', 'Cornell', 'Wisconsin', 'ogbn-arxiv']:
+        for conv_type in ['gcn','gin']:
             print(dataset_name+ " "+conv_type)
             torch.cuda.empty_cache()
             if dataset_name == 'ogbn-arxiv':
@@ -108,8 +109,19 @@ def main():
             else:
                 dataset = WebKB(root='data/'+dataset_name, name=dataset_name, transform=NormalizeFeatures())
             data = dataset[0]
+            if conv_type=='gcn':
+                N = data.edge_index.max().item() + 1
+                data.edge_index = data.edge_index.to("cpu")
+                A = torch.sparse_coo_tensor(data.edge_index, torch.ones(data.edge_index.size(1)), (N, N))
+                I = torch.sparse_coo_tensor(torch.arange(N).repeat(2,1), torch.ones(N), (N, N))
+                A_hat = A + I
+                # can do that because D_hat is a vector here
+                D_hat = torch.sparse.sum(A_hat, dim=1).to_dense()
+                D_hat =  1.0 / torch.sqrt(D_hat) 
+                D_hat_inv_sqrt = sparse_diag(D_hat)
+                data.edge_index  = D_hat_inv_sqrt @ A_hat @ D_hat_inv_sqrt
             log =f'results/best_params_kan_{conv_type}_{dataset_name}.json'
-            data = data.to(device) 
+            data = data.to(device)
             study = optuna.create_study(direction='minimize')
             study.optimize(lambda trial: objective(trial, data, dataset_name, dataset, conv_type, skip, n_epochs, device), n_trials=n_trials)
             best_params =  study.best_params

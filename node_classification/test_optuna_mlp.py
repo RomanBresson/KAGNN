@@ -44,7 +44,7 @@ def main():
             test_accs = []
             times = []
             for i in range(10):
-                #torch.manual_seed(i)
+                torch.manual_seed(i)
                 _, test_acc, time_ = train_and_evaluate_model(hidden_channels=hidden_channels, lr=lr,
                         hidden_layers=hidden_layers, regularizer=regularizer, data=data, dataset_name=dataset_name,
                         dataset=dataset, conv_type=conv_type, skip=skip, n_epochs=n_epochs, device=device)
