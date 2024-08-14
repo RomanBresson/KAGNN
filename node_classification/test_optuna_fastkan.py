@@ -49,7 +49,7 @@ def main():
                 A_hat = A + I
                 # can do that because D_hat is a vector here
                 D_hat = torch.sparse.sum(A_hat, dim=1).to_dense()
-                D_hat =  1.0 / torch.sqrt(D_hat) 
+                D_hat =  1.0 / torch.sqrt(D_hat)
                 D_hat_inv_sqrt = sparse_diag(D_hat)
                 data.edge_index  = D_hat_inv_sqrt @ A_hat @ D_hat_inv_sqrt
             data = data.to(device)

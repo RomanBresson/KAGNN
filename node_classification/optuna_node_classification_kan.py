@@ -48,6 +48,7 @@ def train_and_evaluate_model(spline_order: int,
     best_test_acc_full = []
     criterion =  torch.nn.CrossEntropyLoss()
     if dataset_name == 'ogbn-arxiv':
+        mp_layers = 2
         split_idx = dataset.get_idx_split()
         data = data.to(device)
         test_mask = torch.zeros(data.num_nodes, dtype=torch.bool).squeeze().to(device)
@@ -71,6 +72,7 @@ def train_and_evaluate_model(spline_order: int,
         optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=regularizer)
         best_val_loss, best_test_acc, time_ = experiment_node_class(train_mask,  valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
     else:
+        mp_layers = 3
         best_val_loss_full = []
         best_test_acc_full = []
         for sim in range(len(data.train_mask[0])):
@@ -117,7 +119,7 @@ def main():
                 A_hat = A + I
                 # can do that because D_hat is a vector here
                 D_hat = torch.sparse.sum(A_hat, dim=1).to_dense()
-                D_hat =  1.0 / torch.sqrt(D_hat) 
+                D_hat =  1.0 / torch.sqrt(D_hat)
                 D_hat_inv_sqrt = sparse_diag(D_hat)
                 data.edge_index  = D_hat_inv_sqrt @ A_hat @ D_hat_inv_sqrt
             log =f'results/best_params_kan_{conv_type}_{dataset_name}.json'

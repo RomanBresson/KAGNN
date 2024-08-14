@@ -43,8 +43,8 @@ def train_and_evaluate_model(hidden_channels: int,
     best_val_loss_full = []
     best_test_acc_full = []
     criterion =  torch.nn.CrossEntropyLoss()
-    mp_layers = 2 #TODO ADAPT
     if dataset_name == 'ogbn-arxiv':
+        mp_layers = 2
         split_idx = dataset.get_idx_split()
         data = data.to(device)
         test_mask = torch.zeros(data.num_nodes, dtype=torch.bool).squeeze().to(device)
@@ -68,6 +68,7 @@ def train_and_evaluate_model(hidden_channels: int,
         optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=regularizer)
         best_val_loss, best_test_acc, time_ = experiment_node_class(train_mask,  valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
     else:
+        mp_layers = 3
         best_val_loss_full = []
         best_test_acc_full = []
         for sim in range(len(data.train_mask[0])):
