@@ -22,11 +22,11 @@ def objective(trial: Trial,
               n_epochs: int,
               device: str) -> float:
     hidden_channels = trial.suggest_int('hidden_channels', 16, 512)
-    lr = trial.suggest_float('lr', 0.001, 0.01, log=True)
+    lr = trial.suggest_float('lr', 1e-3, 1e-1, log=True)
     hidden_layers = trial.suggest_int('hidden_layers', 1, 4)
     regularizer = trial.suggest_float('regularizer', 0, 5e-4)
     accuracy = train_and_evaluate_model(hidden_channels, lr, hidden_layers, regularizer, data, dataset_name, dataset,
-                               conv_type, skip, n_epochs, device )
+                               conv_type, skip, n_epochs, device)[0]
     return accuracy
 
 def train_and_evaluate_model(hidden_channels: int,
@@ -40,10 +40,10 @@ def train_and_evaluate_model(hidden_channels: int,
                              skip: bool,
                              n_epochs: int,
                              device: str = "cuda") -> float:
-    best_val_acc_full = []
+    best_val_loss_full = []
     best_test_acc_full = []
     criterion =  torch.nn.CrossEntropyLoss()
-    mp_layers = 4 #TODO ADAPT
+    mp_layers = 2 #TODO ADAPT
     if dataset_name == 'ogbn-arxiv':
         split_idx = dataset.get_idx_split()
         data = data.to(device)
@@ -57,7 +57,7 @@ def train_and_evaluate_model(hidden_channels: int,
         model = GNN_Nodes(conv_type=conv_type, mp_layers=mp_layers, num_features=dataset.num_features,
                 hidden_channels=hidden_channels, num_classes=dataset.num_classes, skip=skip, hidden_layers=hidden_layers).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=regularizer)
-        best_val_acc, best_test_acc, time_ = experiment_node_class(train_mask,  valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
+        best_val_loss, best_test_acc, time_ = experiment_node_class(train_mask,  valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
     elif dataset_name in ['Cora', 'CiteSeer']:
         train_mask = data.train_mask
         valid_mask = data.val_mask
@@ -65,9 +65,9 @@ def train_and_evaluate_model(hidden_channels: int,
         model = GNN_Nodes(conv_type=conv_type, mp_layers=mp_layers, num_features=dataset.num_features,
                 hidden_channels=hidden_channels, num_classes=dataset.num_classes, skip=skip, hidden_layers=hidden_layers).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=regularizer)
-        best_val_acc, best_test_acc, time_ = experiment_node_class(train_mask,  valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
+        best_val_loss, best_test_acc, time_ = experiment_node_class(train_mask,  valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
     else:
-        best_val_acc_full = []
+        best_val_loss_full = []
         best_test_acc_full = []
         for sim in range(len(data.train_mask[0])):
             model = GNN_Nodes(conv_type=conv_type, mp_layers=mp_layers, num_features=dataset.num_features,
@@ -76,16 +76,17 @@ def train_and_evaluate_model(hidden_channels: int,
             train_mask = data.train_mask[:,sim]
             valid_mask = data.val_mask[:,sim]
             test_mask = data.test_mask[:,sim]
-            best_val_acc, best_test_acc, time_ = experiment_node_class(train_mask, valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
-            best_val_acc_full.append(best_val_acc)
+            best_val_loss, best_test_acc, time_ = experiment_node_class(train_mask, valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
+            best_val_loss_full.append(best_val_loss)
             best_test_acc_full.append(best_test_acc)
-        best_val_acc = np.mean(best_val_acc_full)
-    return best_val_acc
+        best_test_acc = np.mean(best_test_acc_full)
+        best_val_loss = np.mean(best_val_loss_full)
+    return best_val_loss, best_test_acc, time_
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     n_epochs = 1000
-    skip = True
+    skip=True
     n_trials = 100
     if not os.path.exists('data'):
         os.makedirs('data')
