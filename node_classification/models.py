@@ -104,7 +104,7 @@ class GNN_Nodes(torch.nn.Module):
         if conv_type == "gcn":
             self.conv_out = GCNConv(dim_out_message_passing, num_classes)
         else:
-            self.conv_out = GINConv(make_mlp(dim_out_message_passing, hidden_channels, num_classes, hidden_channels, False))
+            self.conv_out = GINConv(make_mlp(dim_out_message_passing, hidden_channels, num_classes, hidden_layers, False))
 
     def forward(self, x: torch.tensor , edge_index: torch.tensor):
         l = []
@@ -147,7 +147,7 @@ class GKAN_Nodes(torch.nn.Module):
         if conv_type == "gcn":
             self.conv_out = GCKANLayer(dim_out_message_passing, num_classes, grid_size, spline_order)
         else:
-            self.conv_out = GINConv(make_kan(dim_out_message_passing, hidden_channels, num_classes, hidden_channels, grid_size, spline_order))
+            self.conv_out = GINConv(make_kan(dim_out_message_passing, hidden_channels, num_classes, hidden_layers, grid_size, spline_order))
 
     def forward(self, x: torch.tensor , edge_index: torch.tensor):
         l = []
@@ -189,7 +189,7 @@ class GFASTKAN_Nodes(torch.nn.Module):
         if conv_type == "gcn":
             self.conv_out = GCFASTKANLayer(dim_out_message_passing, num_classes, grid_size+1)
         else:
-            self.conv_out = GINConv(make_fastkan(dim_out_message_passing, hidden_channels, num_classes, hidden_channels, grid_size+1))
+            self.conv_out = GINConv(make_fastkan(dim_out_message_passing, hidden_channels, num_classes, hidden_layers, grid_size+1))
 
     def forward(self, x: torch.tensor , edge_index: torch.tensor):
         l = []

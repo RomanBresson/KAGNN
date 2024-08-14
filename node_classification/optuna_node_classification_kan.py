@@ -47,7 +47,7 @@ def train_and_evaluate_model(spline_order: int,
     best_val_acc_full = []
     best_test_acc_full = []
     criterion =  torch.nn.CrossEntropyLoss()
-    mp_layers = 4 #TODO ADAPT
+    mp_layers = 2 #TODO ADAPT
     if dataset_name == 'ogbn-arxiv':
         split_idx = dataset.get_idx_split()
         data = data.to(device) 
