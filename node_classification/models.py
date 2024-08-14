@@ -4,14 +4,6 @@ import torch
 
 import torch.nn as nn
 from torch_geometric.nn import GINConv, GCNConv
-from torch_geometric.nn.dense.linear import Linear
-from torch_geometric.typing import (
-    Adj,
-    OptPairTensor,
-    OptTensor,
-    Size,
-    SparseTensor,
-)
 
 def make_mlp(num_features, hidden_dim, out_dim, hidden_layers, batch_norm=True):
     if hidden_layers>=2:

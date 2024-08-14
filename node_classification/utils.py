@@ -6,7 +6,6 @@ import torch
 import torch_geometric as pyg
 from torch.optim import Optimizer
 import numpy as np
-from models import GKAN_Nodes, GNN_Nodes, GFASTKAN_Nodes
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -15,15 +14,13 @@ def set_seed(seed=42):
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-
 def sparse_diag(d):
     i = torch.arange(d.size(0), device=d.device)
     indices = torch.stack([i, i], dim=0)
     return torch.sparse_coo_tensor(indices, d, (d.size(0), d.size(0)))
 
-
 def train_node_class(mask: torch.tensor,
-                      model: Union[GKAN_Nodes,GNN_Nodes, GFASTKAN_Nodes],
+                      model,
                       data: pyg.data.Data,
                       optimizer: Optimizer,
                       criterion: torch.nn.CrossEntropyLoss):
@@ -37,7 +34,7 @@ def train_node_class(mask: torch.tensor,
     return loss, out
 
 def test_node_class(mask: torch.tensor,
-                    model:Union[GKAN_Nodes,GNN_Nodes, GFASTKAN_Nodes],
+                    model,
                     data: pyg.data.Data):
     model.eval()
     out = model(data.x,data.edge_index)
@@ -49,7 +46,7 @@ def test_node_class(mask: torch.tensor,
 def experiment_node_class(train_mask: torch.tensor,
                           valid_mask: torch.tensor,
                           test_mask: torch.tensor,
-                          model:Union[GKAN_Nodes,GNN_Nodes, GFASTKAN_Nodes],
+                          model,
                           data: pyg.data.Data,
                           optimizer:Optimizer,
                           criterion: torch.nn.CrossEntropyLoss,

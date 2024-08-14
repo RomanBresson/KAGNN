@@ -9,7 +9,7 @@ from torch_geometric.datasets import Planetoid
 from torch_geometric.transforms import NormalizeFeatures
 from torch_geometric.datasets import Actor, WebKB
 from ogb.nodeproppred import PygNodePropPredDataset
-from utils import set_seed, experiment_node_class
+from utils import set_seed, experiment_node_class, sparse_diag
 from optuna.trial import Trial
 from models import GKAN_Nodes
 

@@ -1,17 +1,16 @@
 # Install required packages.
-import os
+import json
 
+import numpy as np
+import torch
 from torch_geometric.datasets import Planetoid
 from torch_geometric.transforms import NormalizeFeatures
 
-import torch
-from ogb.nodeproppred import PygNodePropPredDataset
 from torch_geometric.datasets import Actor, WebKB
-import torch_geometric as pyg
-from utils import experiment_node_class, set_seed
-from models import GNN_Nodes
-import numpy as np
-import json 
+from ogb.nodeproppred import PygNodePropPredDataset
+
+from utils import set_seed
+
 from optuna_node_classification_mlp import train_and_evaluate_model
 
 def main():
