@@ -45,8 +45,8 @@ def train(model, loader, optimizer, device):
     loss_all = 0
     for data in loader:
         data = data.to(device)
-        optimizer.zero_grad()
         loss = F.nll_loss(model(data), data.y)
+        optimizer.zero_grad()
         loss.backward()
         loss_all += data.num_graphs * loss.item()
         optimizer.step()
@@ -55,7 +55,6 @@ def train(model, loader, optimizer, device):
 def val(model, loader, device):
     model.eval()
     loss_all = 0
-
     for data in loader:
         data = data.to(device)
         loss_all += F.nll_loss(model(data), data.y, reduction='sum').item()
@@ -64,7 +63,6 @@ def val(model, loader, device):
 def test(model, loader, device):
     model.eval()
     correct = 0
-
     for data in loader:
         data = data.to(device)
         pred = model(data).max(1)[1]
@@ -109,7 +107,7 @@ def parameters_finder(trainer_function, objective_function, log_file, args):
         train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 
         study = optuna.create_study(sampler=sampler)
-        study.optimize(lambda trial: objective_function(trial, train_loader, val_loader), n_trials=100)
+        study.optimize(lambda trial: objective_function(trial, train_loader, val_loader), n_trials=100, gc_after_trial=True)
         best_hyperparams = study.best_params
 
         test_accs_for_this_split = []
