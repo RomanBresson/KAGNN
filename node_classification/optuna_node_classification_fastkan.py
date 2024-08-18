@@ -1,7 +1,6 @@
 # Install required packages.
 import os
 import json
-import numpy as np
 import optuna
 import torch
 import torch_geometric as pyg
@@ -83,8 +82,8 @@ def train_and_evaluate_model(hidden_channels: int,
             best_val_loss, best_test_acc, time_ = experiment_node_class(train_mask, valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
             best_val_loss_full.append(best_val_loss)
             best_test_acc_full.append(best_test_acc)
-        best_val_loss = np.mean(best_val_loss_full)
-        best_test_acc = np.mean(best_test_acc_full)
+        best_test_acc = best_test_acc_full.mean().item()
+        best_val_loss = best_val_loss_full.mean().item()
     return best_val_loss, best_test_acc, time_
 
 def main():
