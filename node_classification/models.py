@@ -41,7 +41,7 @@ class GCKANLayer(torch.nn.Module):
 
     def forward(self, X, A_hat_normalized):
         X = self.kan(A_hat_normalized @ X)
-        return(self.bn(x))
+        return self.bn(X)
 
 class GIKANLayer(GINConv):
     def __init__(self, in_feat:int,
