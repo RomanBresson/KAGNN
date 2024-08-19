@@ -1,7 +1,6 @@
 # Install required packages.
 import json
 
-import numpy as np
 import torch
 from torch_geometric.datasets import Planetoid
 from torch_geometric.transforms import NormalizeFeatures
@@ -64,8 +63,8 @@ def main():
                 times.append(time_)
                 test_accs.append(test_acc)
                 print(test_accs)
-            print(f"Test mean acc: {np.mean(test_accs):.4f}, Test sd: {np.std(test_accs):.4f}\n, Time: {time_:.4f}")
-            log.write(f"{dataset_name} {conv_type} accuracy mean {np.mean(test_accs):.4f} , sd {np.std(test_accs):.4f}, Time: {time_:.4f}\n")
+            print(f"Test mean acc: {torch.tensor(test_accs).mean():.4f}, Test sd: {torch.tensor(test_accs).mean():.4f}\n, Time: {time_:.4f}")
+            log.write(f"{dataset_name} {conv_type} accuracy mean {torch.tensor(test_accs).mean():.4f} , sd {torch.tensor(test_accs).mean():.4f}, Time: {time_:.4f}\n")
 
 if __name__ == "__main__":
     main()
