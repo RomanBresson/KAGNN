@@ -24,7 +24,7 @@ def objective( trial: Trial,
     hidden_channels = trial.suggest_int('hidden_channels', 2, 512)
     lr = trial.suggest_float('lr', 1e-4, 1e-1, log=True)
     hidden_layers = trial.suggest_int('hidden_layers', 1, 4)
-    regularizer = trial.suggest_float('dropout', 0, 1e-1)
+    regularizer = trial.suggest_float('regularizer', 0, 1e-1)
     val_loss = train_and_evaluate_model(hidden_channels, lr, hidden_layers, regularizer, data, dataset_name, dataset,
                                conv_type, skip, grid_size, n_epochs, device)[0]
     return val_loss
