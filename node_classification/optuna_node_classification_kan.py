@@ -75,7 +75,7 @@ def train_and_evaluate_model(spline_order: int,
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
         best_val_loss, best_test_acc, time_ = experiment_node_class(train_mask,  valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
     else:
-        mp_layers = 3
+        mp_layers = 4
         best_val_loss_full = []
         best_test_acc_full = []
         for sim in range(len(data.train_mask[0])):
