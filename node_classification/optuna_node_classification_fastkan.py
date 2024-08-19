@@ -20,8 +20,12 @@ def objective( trial: Trial,
               skip: bool,
               n_epochs: int,
               device: str) -> float:
-    grid_size = trial.suggest_int('grid_size', 2, 8)
-    hidden_channels = trial.suggest_int('hidden_channels', 2, 512)
+    grid_size = trial.suggest_int('grid_size', 2, 9)
+    if conv_type=='gin':
+        hidden_layers = trial.suggest_int('hidden_channels', 1, 4)
+    else:
+        hidden_layers = trial.suggest_int('hidden_layers', 0, 0)
+    hidden_channels = trial.suggest_int('hidden_channels', 2, 128)
     lr = trial.suggest_float('lr', 1e-4, 1e-1, log=True)
     hidden_layers = trial.suggest_int('hidden_layers', 1, 4)
     dropout = trial.suggest_float('dropout', 0, 0.9)

@@ -20,10 +20,14 @@ def objective( trial: Trial,
               skip: bool,
               n_epochs: int,
               device: str) -> float:
-    grid_size = trial.suggest_int('grid_size', 1, 5)
-    spline_order = trial.suggest_int('spline_order', 1,4)
-    hidden_channels = trial.suggest_int('hidden_channels', 2, 126)
-    lr = trial.suggest_float('lr', 0.001, 0.01, log=True)
+    grid_size = trial.suggest_int('grid_size', 1, 8)
+    spline_order = trial.suggest_int('spline_order', 1, 8)
+    if conv_type=='gin':
+        hidden_layers = trial.suggest_int('hidden_channels', 1, 4)
+    else:
+        hidden_layers = trial.suggest_int('hidden_layers', 0, 0)
+    hidden_channels = trial.suggest_int('hidden_channels', 2, 128)
+    lr = trial.suggest_float('lr', 1e-4, 1e-1, log=True)
     hidden_layers = trial.suggest_int('hidden_layers', 1, 4)
     dropout = trial.suggest_float('dropout', 0, 0.9)
     val_loss = train_and_evaluate_model(spline_order, hidden_channels, lr, hidden_layers, dropout, data, dataset_name, dataset,
