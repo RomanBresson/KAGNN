@@ -81,9 +81,11 @@ class GNN_Nodes(torch.nn.Module):
                  hidden_channels:int,
                  num_classes:int,
                  skip:bool = True,
-                 hidden_layers:int=2):
+                 hidden_layers:int=2,
+                 dropout:float=0.):
         super().__init__()
         self.convs = torch.nn.ModuleList()
+        self.dropout = torch.nn.Dropout(dropout)
         for i in range(mp_layers-1):
             if i ==0:
                 if conv_type == "gcn":
@@ -108,6 +110,7 @@ class GNN_Nodes(torch.nn.Module):
         for conv in self.convs:
             x = conv(x, edge_index)
             x = torch.nn.functional.relu(x)
+            x = self.dropout(x)
             l.append(x)
         if self.skip:
             x = torch.cat(l, dim=1)
@@ -124,7 +127,8 @@ class GKAN_Nodes(torch.nn.Module):
                  skip:bool = True,
                  grid_size:int = 4,
                  spline_order:int = 3,
-                 hidden_layers:int=2):
+                 hidden_layers:int=2,
+                 dropout:float=0.):
         super().__init__()
         self.convs = torch.nn.ModuleList()
         for i in range(mp_layers-1):
@@ -144,18 +148,18 @@ class GKAN_Nodes(torch.nn.Module):
             self.conv_out = GCKANLayer(dim_out_message_passing, num_classes, grid_size, spline_order)
         else:
             self.conv_out = GINConv(make_kan(dim_out_message_passing, hidden_channels, num_classes, hidden_layers, grid_size, spline_order))
+        self.dropout = torch.nn.Dropout(dropout)
 
-    def forward(self, x: torch.tensor, edge_index: torch.tensor):
+    def forward(self, x: torch.tensor , edge_index: torch.tensor):
         l = []
         l.append(x)
         for conv in self.convs:
             x = conv(x, edge_index)
-            x = torch.nn.functional.relu(x)
+            x = self.dropout(x)
             l.append(x)
         if self.skip:
             x = torch.cat(l, dim=1)
         x = self.conv_out(x, edge_index)
-        x = torch.nn.functional.relu(x)
         return x
 
 class GFASTKAN_Nodes(torch.nn.Module):
@@ -166,7 +170,8 @@ class GFASTKAN_Nodes(torch.nn.Module):
                  num_classes:int,
                  skip:bool = True,
                  grid_size:int = 4,
-                 hidden_layers:int=2):
+                 hidden_layers:int=2,
+                 dropout:float=0.):
         super().__init__()
         self.convs = torch.nn.ModuleList()
         for i in range(mp_layers-1):
@@ -186,16 +191,16 @@ class GFASTKAN_Nodes(torch.nn.Module):
             self.conv_out = GCFASTKANLayer(dim_out_message_passing, num_classes, grid_size)
         else:
             self.conv_out = GINConv(make_fastkan(dim_out_message_passing, hidden_channels, num_classes, hidden_layers, grid_size))
+        self.dropout = torch.nn.Dropout(dropout)
 
     def forward(self, x: torch.tensor , edge_index: torch.tensor):
         l = []
         l.append(x)
         for conv in self.convs:
             x = conv(x, edge_index)
-            x = torch.nn.functional.relu(x)
+            x = self.dropout(x)
             l.append(x)
         if self.skip:
             x = torch.cat(l, dim=1)
         x = self.conv_out(x, edge_index)
-        x = torch.nn.functional.relu(x)
         return x

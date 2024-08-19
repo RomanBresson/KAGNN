@@ -38,14 +38,14 @@ def main():
             hidden_channels = best_params['hidden_channels']
             lr = best_params['lr']
             hidden_layers = best_params['hidden_layers']
-            regularizer = best_params['regularizer']
+            dropout = best_params['dropout']
             data = data.to(device)
             test_accs = []
             times = []
             for i in range(10):
                 torch.manual_seed(i)
                 _, test_acc, time_ = train_and_evaluate_model(hidden_channels=hidden_channels, lr=lr,
-                        hidden_layers=hidden_layers, regularizer=regularizer, data=data, dataset_name=dataset_name,
+                        hidden_layers=hidden_layers, dropout=dropout, data=data, dataset_name=dataset_name,
                         dataset=dataset, conv_type=conv_type, skip=skip, n_epochs=n_epochs, device=device)
                 times.append(time_)
                 test_accs.append(test_acc)

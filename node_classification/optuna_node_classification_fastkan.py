@@ -24,15 +24,15 @@ def objective( trial: Trial,
     hidden_channels = trial.suggest_int('hidden_channels', 2, 512)
     lr = trial.suggest_float('lr', 1e-4, 1e-1, log=True)
     hidden_layers = trial.suggest_int('hidden_layers', 1, 4)
-    regularizer = trial.suggest_float('regularizer', 0, 1e-1)
-    val_loss = train_and_evaluate_model(hidden_channels, lr, hidden_layers, regularizer, data, dataset_name, dataset,
+    dropout = trial.suggest_float('dropout', 0, 0.9)
+    val_loss = train_and_evaluate_model(hidden_channels, lr, hidden_layers, dropout, data, dataset_name, dataset,
                                conv_type, skip, grid_size, n_epochs, device)[0]
     return val_loss
 
 def train_and_evaluate_model(hidden_channels: int,
                              lr: float,
                              hidden_layers: int,
-                             regularizer: float,
+                             dropout: float,
                              data: pyg.data.Data,
                              dataset_name: str,
                              dataset: pyg.data.Dataset,
@@ -56,8 +56,8 @@ def train_and_evaluate_model(hidden_channels: int,
         valid_mask[split_idx['valid']] = True
         test_mask[split_idx['test']] = True
         model = GFASTKAN_Nodes(conv_type=conv_type, mp_layers=mp_layers, num_features=dataset.num_features, hidden_channels= hidden_channels,
-                num_classes=dataset.num_classes, skip=skip, grid_size=grid_size, hidden_layers=hidden_layers).to(device)
-        optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=regularizer)
+                num_classes=dataset.num_classes, skip=skip, grid_size=grid_size, hidden_layers=hidden_layers, dropout=dropout).to(device)
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
         best_val_loss, best_test_acc, time_ = experiment_node_class(train_mask,  valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
     elif dataset_name in ['Cora', 'CiteSeer']:
         mp_layers = 2
@@ -65,8 +65,8 @@ def train_and_evaluate_model(hidden_channels: int,
         valid_mask = data.val_mask
         test_mask = data.test_mask
         model = GFASTKAN_Nodes(conv_type=conv_type, mp_layers=mp_layers, num_features=dataset.num_features, hidden_channels= hidden_channels,
-                num_classes=dataset.num_classes, skip=skip, grid_size=grid_size, hidden_layers=hidden_layers).to(device)
-        optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=regularizer)
+                num_classes=dataset.num_classes, skip=skip, grid_size=grid_size, hidden_layers=hidden_layers, dropout=dropout).to(device)
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
         best_val_loss, best_test_acc, time_ = experiment_node_class(train_mask,  valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
     else:
         mp_layers = 3
@@ -74,8 +74,8 @@ def train_and_evaluate_model(hidden_channels: int,
         best_test_acc_full = []
         for sim in range(len(data.train_mask[0])):
             model = GFASTKAN_Nodes(conv_type=conv_type, mp_layers=mp_layers, num_features=dataset.num_features, hidden_channels= hidden_channels,
-                    num_classes=dataset.num_classes, skip=skip, grid_size=grid_size, hidden_layers=hidden_layers).to(device)
-            optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=regularizer)
+                    num_classes=dataset.num_classes, skip=skip, grid_size=grid_size, hidden_layers=hidden_layers, dropout=dropout).to(device)
+            optimizer = torch.optim.Adam(model.parameters(), lr=lr)
             train_mask = data.train_mask[:,sim]
             valid_mask = data.val_mask[:,sim]
             test_mask = data.test_mask[:,sim]
