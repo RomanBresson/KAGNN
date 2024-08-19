@@ -84,8 +84,8 @@ def train_and_evaluate_model(spline_order: int,
             best_val_loss, best_test_acc, time_ = experiment_node_class(train_mask, valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
             best_val_loss_full.append(best_val_loss)
             best_test_acc_full.append(best_test_acc)
-        best_test_acc = best_test_acc_full.mean().item()
-        best_val_loss = best_val_loss_full.mean().item()
+        best_test_acc = torch.tensor(best_test_acc_full).mean().item()
+        best_val_loss = torch.tensor(best_test_acc_full).mean().item()
     return best_val_loss, best_test_acc, time_
 
 def main():
