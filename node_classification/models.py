@@ -37,7 +37,7 @@ class GCKANLayer(torch.nn.Module):
                  spline_order:int=3):
         super(GCKANLayer, self).__init__()
         self.kan = eKAN([in_feat, out_feat], grid_size=grid_size, spline_order=spline_order)
-        self.bn  = nn.BatchNorm1d(out_feat)
+        self.bn = nn.BatchNorm1d(out_feat)
 
     def forward(self, X, A_hat_normalized):
         X = self.kan(A_hat_normalized @ X)

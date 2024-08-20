@@ -28,7 +28,6 @@ def objective( trial: Trial,
         hidden_layers = trial.suggest_int('hidden_layers', 0, 0)
     hidden_channels = trial.suggest_int('hidden_channels', 2, 128)
     lr = trial.suggest_float('lr', 1e-4, 1e-1, log=True)
-    hidden_layers = trial.suggest_int('hidden_layers', 1, 4)
     dropout = trial.suggest_float('dropout', 0, 0.9)
     val_loss = train_and_evaluate_model(spline_order, hidden_channels, lr, hidden_layers, dropout, data, dataset_name, dataset,
                                conv_type, skip, grid_size, n_epochs, device)[0]
@@ -95,7 +94,7 @@ def train_and_evaluate_model(spline_order: int,
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     n_epochs = 1000
-    skip = True
+    skip = False
     n_trials = 100
     if not os.path.exists('data'):
         os.makedirs('data')
