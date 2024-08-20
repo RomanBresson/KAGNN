@@ -23,7 +23,7 @@ def objective( trial: Trial,
     grid_size = trial.suggest_int('grid_size', 1, 8)
     spline_order = trial.suggest_int('spline_order', 1, 8)
     if conv_type=='gin':
-        hidden_layers = trial.suggest_int('hidden_channels', 1, 4)
+        hidden_layers = trial.suggest_int('hidden_layers', 1, 4)
     else:
         hidden_layers = trial.suggest_int('hidden_layers', 0, 0)
     hidden_channels = trial.suggest_int('hidden_channels', 2, 128)

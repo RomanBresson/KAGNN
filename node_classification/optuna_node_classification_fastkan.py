@@ -22,7 +22,7 @@ def objective( trial: Trial,
               device: str) -> float:
     grid_size = trial.suggest_int('grid_size', 2, 9)
     if conv_type=='gin':
-        hidden_layers = trial.suggest_int('hidden_channels', 1, 4)
+        hidden_layers = trial.suggest_int('hidden_layers', 1, 4)
     else:
         hidden_layers = trial.suggest_int('hidden_layers', 0, 0)
     hidden_channels = trial.suggest_int('hidden_channels', 2, 128)
