@@ -93,7 +93,7 @@ def train_and_evaluate_model(hidden_channels: int,
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     n_epochs = 1000
-    skip = False
+    skip = True
     n_trials = 200
     if not os.path.exists('data'):
         os.makedirs('data')
