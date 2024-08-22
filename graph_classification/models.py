@@ -33,17 +33,14 @@ class GIN(nn.Module):
         for i in range(gnn_layers-1):
             lst.append(GINConv(make_mlp(hidden_dim, hidden_dim, hidden_dim, hidden_layers, batch_norm=True)))
         self.conv = nn.ModuleList(lst)
-        
         self.mlp = make_mlp(hidden_dim, hidden_dim, num_classes, hidden_layers, batch_norm=False)
         self.dropout = nn.Dropout(p=dropout)
-        self.relu = nn.ReLU()
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
         for i in range(self.n_layers):
             x = self.conv[i](x, edge_index)
             x = self.dropout(x)
-
         x = global_add_pool(x, data.batch)
         x = self.mlp(x)
         return F.log_softmax(x, dim=1)
@@ -61,15 +58,12 @@ class KAGIN(nn.Module):
         for i in range(gnn_layers-1):
             lst.append(GINConv(make_kan(hidden_dim, hidden_dim, hidden_dim, hidden_layers, grid_size, spline_order)))
         self.conv = nn.ModuleList(lst)
-
         lst = list()
         for i in range(gnn_layers):
             lst.append(nn.BatchNorm1d(hidden_dim))
         self.bn = nn.ModuleList(lst)
-
         self.kan = make_kan(hidden_dim, hidden_dim, num_classes, hidden_layers, grid_size, spline_order)
         self.dropout = nn.Dropout(dropout)
-        self.relu = nn.ReLU()
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
@@ -77,7 +71,6 @@ class KAGIN(nn.Module):
             x = self.conv[i](x, edge_index)
             x = self.bn[i](x)
             x = self.dropout(x)
-
         x = global_add_pool(x, data.batch)
         x = self.kan(x)
         return F.log_softmax(x, dim=1)
@@ -103,7 +96,6 @@ class FASTKAGIN(nn.Module):
 
         self.kan = make_fastkan(hidden_dim, hidden_dim, num_classes, hidden_layers, grid_size)
         self.dropout = nn.Dropout(dropout)
-        self.relu = nn.ReLU()
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
@@ -111,7 +103,6 @@ class FASTKAGIN(nn.Module):
             x = self.conv[i](x, edge_index)
             x = self.bn[i](x)
             x = self.dropout(x)
-
         x = global_add_pool(x, data.batch)
         x = self.kan(x)
         return F.log_softmax(x, dim=1)
