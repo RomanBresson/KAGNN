@@ -193,7 +193,7 @@ class GFASTKAN_Nodes(torch.nn.Module):
             self.conv_out = GINConv(make_fastkan(dim_out_message_passing, hidden_channels, num_classes, hidden_layers, grid_size))
         self.dropout = torch.nn.Dropout(dropout)
 
-    def forward(self, x: torch.tensor , edge_index: torch.tensor):
+    def forward(self, x: torch.tensor, edge_index: torch.tensor):
         l = []
         l.append(x)
         for conv in self.convs:

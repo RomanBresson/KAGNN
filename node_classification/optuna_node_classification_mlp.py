@@ -24,12 +24,15 @@ def objective(trial: Trial,
         hidden_layers = trial.suggest_int('hidden_layers', 1, 4)
     else:
         hidden_layers = trial.suggest_int('hidden_layers', 0, 0)
-    hidden_channels = trial.suggest_int('hidden_channels', 8, 512)
-    lr = trial.suggest_float('lr', 1e-4, 1e-1, log=True)
-    dropout = trial.suggest_float('dropout', 0, 0.9)
-    val_loss = train_and_evaluate_model(hidden_channels, lr, hidden_layers, dropout, data, dataset_name, dataset,
-                               conv_type, skip, n_epochs, device)[0]
-    return val_loss
+    hidden_channels = trial.suggest_int('hidden_channels', 8, 256)
+    lr = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
+    dropout = trial.suggest_float('dropout', 0, 0.5)
+    val_losses = []
+    for _ in range(10):
+        val_loss, _, _ = train_and_evaluate_model(hidden_channels, lr, hidden_layers, dropout, data, dataset_name, dataset,
+                                conv_type, skip, n_epochs, device)
+        val_losses.append(val_loss)
+    return torch.tensor(val_losses).mean()
 
 def train_and_evaluate_model(hidden_channels: int,
                              lr: float,
@@ -91,7 +94,7 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     n_epochs = 1000
     skip=True
-    n_trials = 100
+    n_trials = 200
     if not os.path.exists('data'):
         os.makedirs('data')
     set_seed(1)
