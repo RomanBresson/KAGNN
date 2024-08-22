@@ -28,7 +28,7 @@ def objective(trial: Trial,
     lr = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
     dropout = trial.suggest_float('dropout', 0, 0.5)
     val_losses = []
-    for _ in range(10):
+    for _ in range(5):
         val_loss, _, _ = train_and_evaluate_model(hidden_channels, lr, hidden_layers, dropout, data, dataset_name, dataset,
                                 conv_type, skip, n_epochs, device)
         val_losses.append(val_loss)
@@ -90,9 +90,9 @@ def train_and_evaluate_model(hidden_channels: int,
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    n_epochs = 1000
+    n_epochs = 500
     skip = True
-    n_trials = 200
+    n_trials = 100
     if not os.path.exists('data'):
         os.makedirs('data')
     set_seed(1)
