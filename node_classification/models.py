@@ -37,11 +37,10 @@ class GCKANLayer(torch.nn.Module):
                  spline_order:int=3):
         super(GCKANLayer, self).__init__()
         self.kan = eKAN([in_feat, out_feat], grid_size=grid_size, spline_order=spline_order)
-        self.bn = nn.BatchNorm1d(out_feat)
 
     def forward(self, X, A_hat_normalized):
         X = self.kan(A_hat_normalized @ X)
-        return self.bn(X)
+        return X
 
 class GIKANLayer(GINConv):
     def __init__(self, in_feat:int,
@@ -59,11 +58,10 @@ class GCFASTKANLayer(torch.nn.Module):
                  grid_size:int=4):
         super(GCFASTKANLayer, self).__init__()
         self.kan = FastKAN([in_feat, out_feat], num_grids=grid_size)
-        self.bn  = nn.BatchNorm1d(out_feat)
 
     def forward(self, X, A_hat_normalized):
         X = self.kan(A_hat_normalized @ X)
-        return self.bn(X)
+        return X
 
 class GIFASTKANLayer(GINConv):
     def __init__(self, in_feat:int,
