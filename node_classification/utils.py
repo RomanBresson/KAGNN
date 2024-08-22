@@ -9,6 +9,9 @@ import numpy as np
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
+#nb of mp layers per dataset
+dataset_layers = {'Cora':2, 'CiteSeer':2, 'Actor':4, 'Texas':3, 'Cornell':3, 'Wisconsin':3, 'ogbn-arxiv':3}
+
 def set_seed(seed=42):
     random.seed(seed)
     np.random.seed(seed)

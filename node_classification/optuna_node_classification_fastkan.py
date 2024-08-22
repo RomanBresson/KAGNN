@@ -8,7 +8,7 @@ from torch_geometric.datasets import Planetoid
 from torch_geometric.transforms import NormalizeFeatures
 from torch_geometric.datasets import Actor, WebKB
 from ogb.nodeproppred import PygNodePropPredDataset
-from utils import set_seed, experiment_node_class, sparse_diag
+from utils import set_seed, experiment_node_class, sparse_diag, dataset_layers
 from optuna.trial import Trial
 from models import GFASTKAN_Nodes
 
@@ -50,8 +50,8 @@ def train_and_evaluate_model(hidden_channels: int,
     best_val_loss_full = []
     best_test_acc_full = []
     criterion =  torch.nn.CrossEntropyLoss()
+    mp_layers = dataset_layers[dataset_name]
     if dataset_name == 'ogbn-arxiv':
-        mp_layers = 2
         split_idx = dataset.get_idx_split()
         data = data.to(device)
         test_mask = torch.zeros(data.num_nodes, dtype=torch.bool).squeeze().to(device)
@@ -66,7 +66,6 @@ def train_and_evaluate_model(hidden_channels: int,
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
         best_val_loss, best_test_acc, time_ = experiment_node_class(train_mask,  valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
     elif dataset_name in ['Cora', 'CiteSeer']:
-        mp_layers = 2
         train_mask = data.train_mask
         valid_mask = data.val_mask
         test_mask = data.test_mask
@@ -75,7 +74,6 @@ def train_and_evaluate_model(hidden_channels: int,
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
         best_val_loss, best_test_acc, time_ = experiment_node_class(train_mask,  valid_mask, test_mask, model, data, optimizer, criterion, n_epochs)
     else:
-        mp_layers = 4
         best_val_loss_full = []
         best_test_acc_full = []
         for sim in range(len(data.train_mask[0])):
