@@ -24,9 +24,9 @@ def objective(trial: Trial,
         hidden_layers = trial.suggest_int('hidden_layers', 1, 4)
     else:
         hidden_layers = trial.suggest_int('hidden_layers', 0, 0)
-    hidden_channels = trial.suggest_int('hidden_channels', 8, 256)
+    hidden_channels = trial.suggest_int('hidden_channels', 2, 128)
     lr = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
-    dropout = trial.suggest_float('dropout', 0, 0.5)
+    dropout = trial.suggest_float('dropout', 0, 0.0)
     val_losses = []
     for _ in range(5):
         val_loss, _, _ = train_and_evaluate_model(hidden_channels, lr, hidden_layers, dropout, data, dataset_name, dataset,
