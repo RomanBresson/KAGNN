@@ -50,7 +50,7 @@ def train_model_with_parameters(params, train_loader, val_loader, test_loader=No
 
 def objective(trial, train_loader, val_loader):
     lr = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
-    hidden_layers = trial.suggest_int('hidden_layers', 2, 8)
+    hidden_layers = trial.suggest_int('hidden_layers', 1, 4)
     hidden_dim = trial.suggest_int('hidden_dim', 4, 512)
     dropout = trial.suggest_float('dropout', 0., 0.9)
     params = {'lr': lr, 'hidden_layers':hidden_layers, 'dropout':dropout, 'hidden_dim':hidden_dim}
