@@ -23,11 +23,11 @@ def make_mlp(num_features, hidden_dim, out_dim, hidden_layers, batch_norm=True):
     return(MLP)
 
 def make_kan(num_features, hidden_dim, out_dim, hidden_layers, grid_size, spline_order):
-    sizes = [num_features] + [hidden_dim]*(hidden_layers-2) + [out_dim]
+    sizes = [num_features] + [hidden_dim]*(hidden_layers-1) + [out_dim]
     return(eKAN(layers_hidden=sizes, grid_size=grid_size, spline_order=spline_order))
 
 def make_fastkan(num_features, hidden_dim, out_dim, hidden_layers, grid_size):
-    sizes = [num_features] + [hidden_dim]*(hidden_layers-2) + [out_dim]
+    sizes = [num_features] + [hidden_dim]*(hidden_layers-1) + [out_dim]
     return(FastKAN(layers_hidden=sizes, num_grids=grid_size))
 
 class GCKANLayer(torch.nn.Module):

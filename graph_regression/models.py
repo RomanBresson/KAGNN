@@ -50,7 +50,7 @@ class GIN(nn.Module):
         return x
 
 def make_kan(num_features, hidden_dim, out_dim, hidden_layers, grid_size, spline_order):
-    sizes = [num_features] + [hidden_dim]*(hidden_layers-2) + [out_dim]
+    sizes = [num_features] + [hidden_dim]*(hidden_layers-1) + [out_dim]
     return(KAN(layers_hidden=sizes, grid_size=grid_size, spline_order=spline_order))
     
 class KAGIN(nn.Module):
@@ -85,7 +85,7 @@ class KAGIN(nn.Module):
         return x
 
 def make_fastkan(num_features, hidden_dim, out_dim, hidden_layers, grid_size):
-    sizes = [num_features] + [hidden_dim]*(hidden_layers-2) + [out_dim]
+    sizes = [num_features] + [hidden_dim]*(hidden_layers-1) + [out_dim]
     return(FastKAN(layers_hidden=sizes, num_grids=grid_size))
 
 class FASTKAGIN(nn.Module):
