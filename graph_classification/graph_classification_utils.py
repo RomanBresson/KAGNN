@@ -95,7 +95,8 @@ def parameters_finder(trainer_function, objective_function, log_file, args):
     splits, dataset = get_data_and_splits(args)
     test_accs_for_this_seed = []
     all_best_hyperparams = []
-    for it in range(0,10):
+    sizes = []
+    for it in range(10):
         torch.cuda.empty_cache()
         train_index = splits[it]['model_selection'][0]['train']
         val_index = splits[it]['model_selection'][0]['validation']
@@ -125,11 +126,11 @@ def parameters_finder(trainer_function, objective_function, log_file, args):
             train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 
             print(f'---------------- Split {it} ----------------')
-            test_acc = trainer_function(best_hyperparams, train_loader, val_loader, test_loader)
+            test_acc, model_size = trainer_function(best_hyperparams, train_loader, val_loader, test_loader)
             test_accs_for_this_split.append(test_acc)
             print(test_accs_for_this_split)
-
         all_best_hyperparams.append(best_hyperparams)
+        sizes.append(model_size)
         test_accs_tensor = torch.tensor(test_accs_for_this_split)
         tat_mean = test_accs_tensor.mean().item()
         tat_std = test_accs_tensor.std().item()
@@ -140,6 +141,7 @@ def parameters_finder(trainer_function, objective_function, log_file, args):
             file.write(f'SPLIT {it}\n')
             file.write(f'Accuracies {test_accs_for_this_seed}\n')
             file.write(f'Params {all_best_hyperparams}\n')
+            file.write(f'Size {sizes}\n')
             file.write(f'Mean {tat_mean}, Std {tat_std}\n')
             file.write('\n')
 

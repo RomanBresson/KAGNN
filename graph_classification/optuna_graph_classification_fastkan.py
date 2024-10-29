@@ -2,7 +2,7 @@ import random
 import numpy as np
 import argparse
 import torch
-from graph_classification_utils import parameters_finder, EarlyStopper, val, test, train
+from graph_classification_utils import parameters_finder, EarlyStopper, val, test, train, count_params
 from models import FASTKAGIN
 
 # Argument parser
@@ -46,14 +46,15 @@ def train_model_with_parameters(params, train_loader, val_loader, test_loader=No
     if test_loader is None:
         return best_val_loss
     else:
-        return test_acc
+        torch.save(model, 'fkan')
+        return test_acc, count_params(model)
 
 def objective(trial, train_loader, val_loader):
-    lr = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
-    hidden_layers = trial.suggest_int('hidden_layers', 1, 4)
-    hidden_dim = trial.suggest_int('hidden_dim', 2, 128)
-    grid_size = trial.suggest_int('grid_size', 2, 9)
-    dropout = trial.suggest_float('dropout', 0.0, 0.9)
+    lr = trial.suggest_float('lr', 1e-4, 1e-2, log=True)
+    hidden_layers = trial.suggest_int('hidden_layers', 2, 4)
+    hidden_dim = trial.suggest_int('hidden_dim', 2, 64)
+    grid_size = trial.suggest_int('grid_size', 2, 8)
+    dropout = trial.suggest_float('dropout', 0.0, 0.0)
     params = {'lr': lr, 'hidden_layers':hidden_layers, 'grid_size':grid_size, 'dropout':dropout, 'hidden_dim':hidden_dim}
     best_val_loss = train_model_with_parameters(params, train_loader, val_loader)
     return best_val_loss

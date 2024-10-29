@@ -2,7 +2,7 @@ import random
 import numpy as np
 import argparse
 import torch
-from graph_classification_utils import parameters_finder, EarlyStopper, val, test, train
+from graph_classification_utils import parameters_finder, EarlyStopper, val, test, train, count_params
 from models import GIN
 
 # Argument parser
@@ -28,7 +28,7 @@ device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cp
 print(device)
 
 def train_model_with_parameters(params, train_loader, val_loader, test_loader=None):
-    lr, hidden_layers, hidden_dim, dropout = lr, hidden_layers, hidden_dim, dropout = params['lr'], params['hidden_layers'], params['hidden_dim'], params['dropout']
+    lr, hidden_layers, hidden_dim, dropout = params['lr'], params['hidden_layers'], params['hidden_dim'], params['dropout']
     model = GIN(args.nb_gnn_layers, train_loader.dataset.num_features, hidden_dim, hidden_layers, train_loader.dataset.num_classes, dropout).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     best_val_loss = float('inf')
@@ -46,12 +46,13 @@ def train_model_with_parameters(params, train_loader, val_loader, test_loader=No
     if test_loader is None:
         return best_val_loss
     else:
-        return test_acc
+        torch.save(model, 'mlp')
+        return test_acc, count_params(model)
 
 def objective(trial, train_loader, val_loader):
-    lr = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
-    hidden_layers = trial.suggest_int('hidden_layers', 1, 4)
-    hidden_dim = trial.suggest_int('hidden_dim', 4, 512)
+    lr = trial.suggest_float('lr', 1e-4, 1e-2, log=True)
+    hidden_layers = trial.suggest_int('hidden_layers', 2, 8)
+    hidden_dim = trial.suggest_int('hidden_dim', 8, 1024)
     dropout = trial.suggest_float('dropout', 0., 0.9)
     params = {'lr': lr, 'hidden_layers':hidden_layers, 'dropout':dropout, 'hidden_dim':hidden_dim}
     best_val_loss = train_model_with_parameters(params, train_loader, val_loader)
