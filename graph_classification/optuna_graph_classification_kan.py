@@ -50,10 +50,10 @@ def train_model_with_parameters(params, train_loader, val_loader, test_loader=No
 
 def objective(trial, train_loader, val_loader):
     lr = trial.suggest_float('lr', 1e-4, 1e-2, log=True)
-    hidden_layers = trial.suggest_int('hidden_layers', 2, 4)
-    hidden_dim = trial.suggest_int('hidden_dim', 2, 32)
-    grid_size = trial.suggest_int('grid_size', 1, 8)
-    spline_order = trial.suggest_int('spline_order', 1, 3)
+    hidden_layers = trial.suggest_int('hidden_layers', 1, 4)
+    hidden_dim = trial.suggest_int('hidden_dim', 2, 64)
+    grid_size = trial.suggest_int('grid_size', 2, 32)
+    spline_order = trial.suggest_int('spline_order', 1, 4)
     dropout = trial.suggest_float('dropout', 0.0, 0.9)
     params = {'lr': lr, 'hidden_layers':hidden_layers, 'grid_size':grid_size, 'dropout':dropout, 'spline_order':spline_order, 'hidden_dim':hidden_dim}
     best_val_loss = train_model_with_parameters(params, train_loader, val_loader)
