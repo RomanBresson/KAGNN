@@ -9,6 +9,8 @@ import optuna
 
 unlabeled_datasets = ['IMDB-BINARY', 'IMDB-MULTI', 'REDDIT-BINARY', 'REDDIT-MULTI-5K', 'COLLAB']
 
+layers_per_dataset = {'IMDB-BINARY':2, 'IMDB-MULTI':2, 'MUTAG':2, 'PROTEINS_full':2, 'DD':3, 'ENZYMES':4, 'NCI1':5}
+
 class EarlyStopper:
     def __init__(self, patience=1, min_delta=0):
         self.patience = patience

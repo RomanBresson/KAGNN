@@ -2,14 +2,13 @@ import random
 import numpy as np
 import argparse
 import torch
-from graph_classification_utils import parameters_finder, EarlyStopper, val, test, train, count_params
+from graph_classification_utils import parameters_finder, EarlyStopper, val, test, train, count_params, layers_per_dataset
 from models import FASTKAGIN
 
 # Argument parser
 parser = argparse.ArgumentParser(description='KAGIN')
 parser.add_argument('--dataset', default='MUTAG', help='Dataset name')
 parser.add_argument('--batch-size', type=int, default=64, help='Input batch size for training')
-parser.add_argument('--nb_gnn_layers', type=int, default=4, help='Number of message passing layers')
 parser.add_argument('--epochs', type=int, default=2000, help='Number of epochs to train')
 parser.add_argument('--patience', type=int, default=20, help='Patience of early stopping')
 parser.add_argument('--random_seed', type=int, default=12345, help='Random seed')
@@ -29,7 +28,7 @@ print(device)
 
 def train_model_with_parameters(params, train_loader, val_loader, test_loader=None):
     lr, hidden_layers, hidden_dim, dropout, grid_size = params['lr'], params['hidden_layers'], params['hidden_dim'], params['dropout'], params['grid_size']
-    model = FASTKAGIN(args.nb_gnn_layers, train_loader.dataset.num_features, hidden_dim, train_loader.dataset.num_classes, hidden_layers, grid_size, dropout).to(device)
+    model = FASTKAGIN(layers_per_dataset[args.dataset], train_loader.dataset.num_features, hidden_dim, train_loader.dataset.num_classes, hidden_layers, grid_size, dropout).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     best_val_loss = float('inf')
     early_stopper = EarlyStopper(patience=args.patience)
