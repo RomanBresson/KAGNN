@@ -112,7 +112,7 @@ def parameters_finder(trainer_function, objective_function, log_file, args):
         study = optuna.create_study(sampler=sampler)
         study.optimize(lambda trial: objective_function(trial, train_loader, val_loader), n_trials=100, gc_after_trial=True)
         best_hyperparams = study.best_params
-
+        best_hyperparams['model_type'] = args.model_type
         test_accs_for_this_split = []
         for _ in range(3):
             train_index = splits[it]['model_selection'][0]['train']
