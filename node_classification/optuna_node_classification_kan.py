@@ -8,7 +8,7 @@ from torch_geometric.datasets import Planetoid
 from torch_geometric.transforms import NormalizeFeatures
 from torch_geometric.datasets import Actor, WebKB
 from ogb.nodeproppred import PygNodePropPredDataset
-from utils import set_seed, experiment_node_class, sparse_diag, dataset_layers
+from utils import set_seed, experiment_node_class, dataset_layers
 from optuna.trial import Trial
 from models import GKAN_Nodes
 
@@ -28,7 +28,7 @@ def objective( trial: Trial,
         hidden_layers = trial.suggest_int('hidden_layers', 0, 0)
     hidden_channels = trial.suggest_int('hidden_channels', 2, 64)
     lr = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
-    dropout = trial.suggest_float('dropout', 0, 0.0)
+    dropout = trial.suggest_float('dropout', 0, 0.9)
     val_losses = []
     for _ in range(5):
         val_loss, _, _ = train_and_evaluate_model(spline_order, hidden_channels, lr, hidden_layers, dropout, data, dataset_name, dataset,
@@ -114,17 +114,6 @@ def main():
             else:
                 dataset = WebKB(root='data/'+dataset_name, name=dataset_name, transform=NormalizeFeatures())
             data = dataset[0]
-            if conv_type=='gcn':
-                N = data.edge_index.max().item() + 1
-                data.edge_index = data.edge_index.to("cpu")
-                A = torch.sparse_coo_tensor(data.edge_index, torch.ones(data.edge_index.size(1)), (N, N))
-                I = torch.sparse_coo_tensor(torch.arange(N).repeat(2,1), torch.ones(N), (N, N))
-                A_hat = A + I
-                # can do that because D_hat is a vector here
-                D_hat = torch.sparse.sum(A_hat, dim=1).to_dense()
-                D_hat =  1.0 / torch.sqrt(D_hat)
-                D_hat_inv_sqrt = sparse_diag(D_hat)
-                data.edge_index  = D_hat_inv_sqrt @ A_hat @ D_hat_inv_sqrt
             log =f'results/best_params_kan_{conv_type}_{dataset_name}.json'
             data = data.to(device)
             study = optuna.create_study(direction='minimize')
