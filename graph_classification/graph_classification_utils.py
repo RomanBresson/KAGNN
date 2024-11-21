@@ -32,7 +32,7 @@ class Degree(object):
     def __call__(self, data):
         idx = data.edge_index[0]
         deg = torch.clip(degree(idx, data.num_nodes).long(), 0, 35)
-        data.x = F.one_hot(deg, num_classes=36)
+        data.x = F.one_hot(deg, num_classes=36).float()
         return data
 
 class to_cuda(object):
