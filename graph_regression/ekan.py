@@ -103,7 +103,6 @@ class KANLinear(torch.nn.Module):
                 / (grid[:, k + 1 :] - grid[:, 1:(-k)])
                 * bases[:, :, 1:]
             )
-
         assert bases.size() == (
             x.size(0),
             self.in_features,
@@ -153,12 +152,13 @@ class KANLinear(torch.nn.Module):
 
     def forward(self, x: torch.Tensor):
         assert x.dim() == 2 and x.size(1) == self.in_features
-
+        splines_out = self.b_splines(x).view(x.size(0), -1)
         base_output = F.linear(self.base_activation(x), self.base_weight)
         spline_output = F.linear(
-            self.b_splines(x).view(x.size(0), -1),
+            splines_out,
             self.scaled_spline_weight.view(self.out_features, -1),
         )
+        torch.cuda.empty_cache()
         return base_output + spline_output
 
     @torch.no_grad()
@@ -272,6 +272,7 @@ class KAN(torch.nn.Module):
             if update_grid:
                 layer.update_grid(x)
             x = layer(x)
+        torch.cuda.empty_cache()
         return x
 
     def regularization_loss(self, regularize_activation=1.0, regularize_entropy=1.0):
