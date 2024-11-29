@@ -40,17 +40,6 @@ def main():
             grid_size = best_params['grid_size']
             hidden_layers = best_params['hidden_layers']
             dropout = best_params['dropout']
-            if conv_type=='gcn':
-                N = data.edge_index.max().item() + 1
-                data.edge_index = data.edge_index.to("cpu")
-                A = torch.sparse_coo_tensor(data.edge_index, torch.ones(data.edge_index.size(1)), (N, N))
-                I = torch.sparse_coo_tensor(torch.arange(N).repeat(2,1), torch.ones(N), (N, N))
-                A_hat = A + I
-                # can do that because D_hat is a vector here
-                D_hat = torch.sparse.sum(A_hat, dim=1).to_dense()
-                D_hat =  1.0 / torch.sqrt(D_hat)
-                D_hat_inv_sqrt = sparse_diag(D_hat)
-                data.edge_index  = D_hat_inv_sqrt @ A_hat @ D_hat_inv_sqrt
             data = data.to(device)
             test_accs = []
             times = []
