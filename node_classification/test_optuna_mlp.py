@@ -42,7 +42,7 @@ def main():
             data = data.to(device)
             test_accs = []
             times = []
-            for i in range(10):
+            for i in range(3):
                 torch.manual_seed(i)
                 _, test_acc, time_ = train_and_evaluate_model(hidden_channels=hidden_channels, lr=lr,
                         hidden_layers=hidden_layers, dropout=dropout, data=data, dataset_name=dataset_name,
