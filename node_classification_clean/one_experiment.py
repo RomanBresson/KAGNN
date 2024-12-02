@@ -37,7 +37,7 @@ def objective(trial, dataset_name, args):
         params['hidden_channels'] = trial.suggest_int('hidden_channels', 1, 256)
     elif params['architecture']=='fastkan':
         params['hidden_channels'] = trial.suggest_int('hidden_channels', 1, 32)
-        params['grid_size'] = trial.suggest_int('grid_size', 1, 8)
+        params['grid_size'] = trial.suggest_int('grid_size', 2, 8)
     elif params['architecture']=='kan':
         params['hidden_channels'] = trial.suggest_int('hidden_channels', 1, 16)
         params['grid_size'] = trial.suggest_int('grid_size', 1, 4)
