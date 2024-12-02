@@ -68,6 +68,5 @@ for _ in range(3):
 test_accs = torch.cat(test_accs)
 tm,ts = test_accs.mean(), test_accs.std()
 
-with open('finished_' + log_file, 'a') as file:
+with open(log_file + '_finished', 'a') as file:
     file.write(f'Mean: {tm.item()}, Std: {ts.item()}')
-# %%
