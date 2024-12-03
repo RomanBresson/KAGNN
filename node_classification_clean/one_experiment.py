@@ -4,8 +4,6 @@ import torch
 from utils import run_experiment
 import optuna
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
 parser = argparse.ArgumentParser(description='Node_classif')
 parser.add_argument('--dataset', default='Cora', help='Dataset name')
 parser.add_argument('--epochs', type=int, default=10000, help='Number of epochs to train')
@@ -36,8 +34,8 @@ def objective(trial, dataset_name, args):
     if params['architecture']=='mlp':
         params['hidden_channels'] = trial.suggest_int('hidden_channels', 1, 256)
     elif params['architecture']=='fastkan':
-        params['hidden_channels'] = trial.suggest_int('hidden_channels', 1, 32)
-        params['grid_size'] = trial.suggest_int('grid_size', 2, 8)
+        params['hidden_channels'] = trial.suggest_int('hidden_channels', 1, 16)
+        params['grid_size'] = trial.suggest_int('grid_size', 2, 4)
     elif params['architecture']=='kan':
         params['hidden_channels'] = trial.suggest_int('hidden_channels', 1, 16)
         params['grid_size'] = trial.suggest_int('grid_size', 1, 4)
