@@ -28,12 +28,13 @@ def set_seed(seed=42):
     torch.manual_seed(seed)
 
 def load_data(dataset_name):
+    print(torch.cuda.mem_get_info(0))
     if dataset_name == 'ogbn-arxiv':
         dataset = PygNodePropPredDataset(name=dataset_name, root='data/'+dataset_name)
         split_idx = dataset.get_idx_split()
-        test_mask = torch.zeros(dataset.num_nodes, dtype=torch.bool).squeeze().to(device)
-        valid_mask  = torch.zeros(dataset.num_nodes, dtype=torch.bool).squeeze().to(device)
-        train_mask  = torch.zeros(dataset.num_nodes, dtype=torch.bool).squeeze().to(device)
+        test_mask = torch.zeros(dataset.num_nodes, dtype=torch.bool).squeeze()
+        valid_mask  = torch.zeros(dataset.num_nodes, dtype=torch.bool).squeeze()
+        train_mask  = torch.zeros(dataset.num_nodes, dtype=torch.bool).squeeze()
         dataset.y = dataset.y.squeeze()
         train_mask[split_idx['train']] = True
         valid_mask[split_idx['valid']] = True
@@ -92,7 +93,7 @@ def make_model(params):
                             num_features=params['num_features'],
                             hidden_channels=params['hidden_channels'],
                             num_classes=params['num_classes'],
-                            skip=True,
+                            skip=params['skip'],
                             hidden_layers=params['hidden_layers'],
                             dropout=params['dropout'])
     elif params['architecture']=='kan':
@@ -101,7 +102,7 @@ def make_model(params):
                             num_features=params['num_features'],
                             hidden_channels=params['hidden_channels'],
                             num_classes=params['num_classes'],
-                            skip=True,
+                            skip=params['skip'],
                             hidden_layers=params['hidden_layers'],
                             dropout=params['dropout'],
                             grid_size=params['grid_size'],
@@ -112,10 +113,11 @@ def make_model(params):
                             num_features=params['num_features'],
                             hidden_channels=params['hidden_channels'],
                             num_classes=params['num_classes'],
-                            skip=True,
+                            skip=params['skip'],
                             hidden_layers=params['hidden_layers'],
                             dropout=params['dropout'],
                             grid_size=params['grid_size'])
+    print(count_params(model))
     return(model)
 
 def train_one_epoch(model, data, train_mask, optimizer, criterion):
@@ -186,7 +188,7 @@ def all_splits(params, data):
     val_accs = []
     val_losses = []
     test_accs = []
-    for id_split in range(10):
+    for id_split in range(data.train_masks.shape[0]):
         print(f"Split {id_split}")
         model = make_model(params).to(device)
         train_mask, val_mask, test_mask = data.train_masks[id_split], data.val_masks[id_split], data.test_masks[id_split]

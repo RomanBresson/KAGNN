@@ -12,6 +12,7 @@ parser.add_argument('--random_seed', type=int, default=12345, help='Random seed'
 parser.add_argument('--conv_type', default='gin', help='GIN/GCN')
 parser.add_argument('--architecture', default='mlp', help='MLP/KAN/FASTKAN')
 parser.add_argument('--rate_print', type=int, default=1000, help='Print frequency')
+parser.add_argument('--skip', type=int, default=1, help='skip connections')
 args = parser.parse_args()
 
 def objective(trial, dataset_name, args):
@@ -25,7 +26,8 @@ def objective(trial, dataset_name, args):
             'dropout': 0.,
             'grid_size': 0,
             'spline_order': 0,
-            'rate_print': args.rate_print
+            'rate_print': args.rate_print,
+            'skip': args.skip
         }
     params['lr'] = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
     params['dropout'] = trial.suggest_float('dropout', 0, 0.9)
@@ -54,7 +56,8 @@ params = {
         'patience': args.patience,
         'epochs': args.epochs,
         'rate_print': args.rate_print,
-        'hidden_layers': 0
+        'hidden_layers': 0,
+        'skip': args.skip
     }
 for bp,v in best_params.items():
     params[bp] = v

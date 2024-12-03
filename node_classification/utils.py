@@ -36,7 +36,6 @@ def train_node_class(mask: torch.tensor,
     model.train()
     optimizer.zero_grad()  # Clear gradients.
     out = model(data.x,data.edge_index)  # Perform a single forward pass.
-    out = torch.softmax(out, dim=1)
     loss = criterion(out[mask], data.y[mask])  # Compute the loss solely based on the training nodes.
     loss.backward()  # Derive gradients.
     optimizer.step()  # Update parameters based on gradients.
