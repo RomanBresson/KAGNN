@@ -36,10 +36,10 @@ def objective(trial, dataset_name, args):
     if params['architecture']=='mlp':
         params['hidden_channels'] = trial.suggest_int('hidden_channels', 1, 256)
     elif params['architecture']=='fastkan':
-        params['hidden_channels'] = trial.suggest_int('hidden_channels', 1, 16)
+        params['hidden_channels'] = trial.suggest_int('hidden_channels', 2, 8)
         params['grid_size'] = trial.suggest_int('grid_size', 2, 4)
     elif params['architecture']=='kan':
-        params['hidden_channels'] = trial.suggest_int('hidden_channels', 1, 16)
+        params['hidden_channels'] = trial.suggest_int('hidden_channels', 2, 16)
         params['grid_size'] = trial.suggest_int('grid_size', 1, 4)
         params['spline_order'] = trial.suggest_int('spline_order', 1, 3)
     mva,_,_,_ = run_experiment(params, dataset_name)
