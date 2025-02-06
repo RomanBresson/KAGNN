@@ -97,7 +97,7 @@ def main():
         os.makedirs('data')
     set_seed(1)
     for dataset_name in ['Cora', 'CiteSeer', 'Actor', 'Texas', 'Cornell', 'Wisconsin', 'ogbn-arxiv']:
-        for conv_type in ['gcn','gin']:
+        for conv_type in ['gat']:
             print(dataset_name+ " "+conv_type)
             torch.cuda.empty_cache()
             if dataset_name == 'ogbn-arxiv':

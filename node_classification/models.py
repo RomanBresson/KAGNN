@@ -3,7 +3,7 @@ from fastkan import FastKAN,FastKANLayer
 import torch
 
 import torch.nn as nn
-from torch_geometric.nn import GINConv, GCNConv
+from torch_geometric.nn import GINConv, GCNConv, GATConv
 
 def make_mlp(num_features, hidden_dim, out_dim, hidden_layers, batch_norm=True):
     if hidden_layers>=2:
@@ -87,6 +87,7 @@ class GNN_Nodes(torch.nn.Module):
                  num_classes:int,
                  skip:bool = True,
                  hidden_layers:int=2,
+                 heads:int=4,
                  dropout:float=0.):
         super().__init__()
         self.convs = torch.nn.ModuleList()
@@ -95,17 +96,24 @@ class GNN_Nodes(torch.nn.Module):
             if i ==0:
                 if conv_type == "gcn":
                     self.convs.append(GCNConv(num_features, hidden_channels))
+                elif conv_type == "gat":
+                    self.convs.append(GATConv(num_features, hidden_channels, heads))
                 else:
                     self.convs.append(GINConv(make_mlp(num_features, hidden_channels, hidden_channels, hidden_layers, False)))
             else:
                 if conv_type == "gcn":
                     self.convs.append(GCNConv(hidden_channels, hidden_channels))
+                if conv_type == "gat":
+                    self.convs.append(GCNConv(hidden_channels*heads, hidden_channels*heads))
                 else:
                     self.convs.append(GINConv(make_mlp(hidden_channels, hidden_channels, hidden_channels, hidden_layers, False)))
         self.skip = skip
         dim_out_message_passing = num_features+(mp_layers-1)*hidden_channels if skip else hidden_channels
         if conv_type == "gcn":
             self.conv_out = GCNConv(dim_out_message_passing, num_classes)
+        if conv_type == "gat":
+            dim_out_message_passing = num_features+(mp_layers-1)*hidden_channels*heads if skip else hidden_channels*heads
+            self.conv_out = GATConv(dim_out_message_passing, num_classes)
         else:
             self.conv_out = GINConv(make_mlp(dim_out_message_passing, hidden_channels, num_classes, hidden_layers, False))
 
