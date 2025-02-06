@@ -61,6 +61,7 @@ def experiment_node_class(train_mask: torch.tensor,
                           n_epochs:int,
                           patience: int = 50):
     print(count_params(model))
+    print(model)
     best_val_loss = torch.inf
     best_test_acc = 0
     early_stopping = 0

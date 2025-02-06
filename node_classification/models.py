@@ -42,6 +42,15 @@ class KAGCNConv(GCNConv):
         super(KAGCNConv, self).__init__(in_feat, out_feat)
         self.lin = KANLayer(in_feat, out_feat, grid_size, spline_order)
 
+class KAGATConv(GATConv):
+    def __init__(self, in_feat:int,
+                 out_feat:int,
+                 heads:int,
+                 grid_size:int=4,
+                 spline_order:int=3):
+        super(KAGATConv, self).__init__(in_feat, out_feat*heads)
+        self.lin = KANLayer(in_feat, out_feat*heads, grid_size, spline_order)
+
 class GIKANLayer(GINConv):
     def __init__(self, in_feat:int,
                  out_feat:int,
@@ -69,6 +78,15 @@ class FASTKAGCNConv(GCNConv):
         super(FASTKAGCNConv, self).__init__(in_channels=in_feat, out_channels=out_feat)
         self.grid_size = grid_size
         self.lin = FKANLayer(in_feat, out_feat, num_grids=grid_size)
+
+class FASTKAGATConv(GATConv):
+    def __init__(self, in_feat:int,
+                 out_feat:int,
+                 heads:int,
+                 grid_size:int=4,):
+        super(FASTKAGATConv, self).__init__(in_feat, out_feat*heads)
+        self.grid_size = grid_size
+        self.lin = FKANLayer(in_feat, out_feat*heads, grid_size)
 
 class GIFASTKANLayer(GINConv):
     def __init__(self, in_feat:int,
@@ -103,17 +121,17 @@ class GNN_Nodes(torch.nn.Module):
             else:
                 if conv_type == "gcn":
                     self.convs.append(GCNConv(hidden_channels, hidden_channels))
-                if conv_type == "gat":
-                    self.convs.append(GCNConv(hidden_channels*heads, hidden_channels*heads))
+                elif conv_type == "gat":
+                    self.convs.append(GATConv(hidden_channels*heads, hidden_channels, heads))
                 else:
                     self.convs.append(GINConv(make_mlp(hidden_channels, hidden_channels, hidden_channels, hidden_layers, False)))
         self.skip = skip
         dim_out_message_passing = num_features+(mp_layers-1)*hidden_channels if skip else hidden_channels
         if conv_type == "gcn":
             self.conv_out = GCNConv(dim_out_message_passing, num_classes)
-        if conv_type == "gat":
+        elif conv_type == "gat":
             dim_out_message_passing = num_features+(mp_layers-1)*hidden_channels*heads if skip else hidden_channels*heads
-            self.conv_out = GATConv(dim_out_message_passing, num_classes)
+            self.conv_out = GATConv(dim_out_message_passing, num_classes, heads=1)
         else:
             self.conv_out = GINConv(make_mlp(dim_out_message_passing, hidden_channels, num_classes, hidden_layers, False))
 
@@ -138,6 +156,7 @@ class GKAN_Nodes(torch.nn.Module):
                  hidden_channels:int,
                  num_classes:int,
                  skip:bool = True,
+                 heads:int=4,
                  grid_size:int = 4,
                  spline_order:int = 3,
                  hidden_layers:int=2,
@@ -148,17 +167,24 @@ class GKAN_Nodes(torch.nn.Module):
             if i ==0:
                 if conv_type == "gcn":
                     self.convs.append(KAGCNConv(num_features, hidden_channels, grid_size, spline_order))
+                elif conv_type == "gat":
+                    self.convs.append(KAGATConv(num_features, hidden_channels, heads, grid_size, spline_order))
                 else:
                     self.convs.append(GIKANLayer(num_features, hidden_channels, grid_size, spline_order, hidden_channels, hidden_layers))
             else:
                 if conv_type == "gcn":
                     self.convs.append(KAGCNConv(hidden_channels, hidden_channels, grid_size, spline_order))
+                elif conv_type == "gat":
+                    self.convs.append(KAGATConv(hidden_channels*heads, hidden_channels, heads, grid_size, spline_order))
                 else:
                     self.convs.append(GIKANLayer(hidden_channels, hidden_channels, grid_size, spline_order, hidden_channels, hidden_layers))
         self.skip = skip
         dim_out_message_passing = num_features+(mp_layers-1)*hidden_channels if skip else hidden_channels
         if conv_type == "gcn":
             self.conv_out = KAGCNConv(dim_out_message_passing, num_classes, grid_size, spline_order)
+        elif conv_type == "gat":
+            dim_out_message_passing = num_features+(mp_layers-1)*hidden_channels*heads if skip else hidden_channels*heads
+            self.conv_out = KAGATConv(dim_out_message_passing, num_classes, 1, grid_size, spline_order)
         else:
             self.conv_out = GINConv(make_kan(dim_out_message_passing, hidden_channels, num_classes, hidden_layers, grid_size, spline_order))
         self.dropout = torch.nn.Dropout(dropout)
@@ -182,6 +208,7 @@ class GFASTKAN_Nodes(torch.nn.Module):
                  hidden_channels:int,
                  num_classes:int,
                  skip:bool = True,
+                 heads:int = 4,
                  grid_size:int = 4,
                  hidden_layers:int=2,
                  dropout:float=0.):
@@ -191,17 +218,24 @@ class GFASTKAN_Nodes(torch.nn.Module):
             if i ==0:
                 if conv_type == "gcn":
                     self.convs.append(FASTKAGCNConv(num_features, hidden_channels, grid_size))
+                elif conv_type == "gat":
+                    self.convs.append(FASTKAGATConv(num_features, hidden_channels, heads, grid_size))
                 else:
                     self.convs.append(GIFASTKANLayer(num_features, hidden_channels, grid_size, hidden_channels, hidden_layers))
             else:
                 if conv_type == "gcn":
                     self.convs.append(FASTKAGCNConv(hidden_channels, hidden_channels, grid_size))
+                elif conv_type == "gat":
+                    self.convs.append(FASTKAGATConv(num_features*heads, hidden_channels, heads, grid_size))
                 else:
                     self.convs.append(GIFASTKANLayer(hidden_channels, hidden_channels, grid_size, hidden_channels, hidden_layers))
         self.skip = skip
         dim_out_message_passing = num_features+(mp_layers-1)*hidden_channels if skip else hidden_channels
         if conv_type == "gcn":
             self.conv_out = FASTKAGCNConv(dim_out_message_passing, num_classes, grid_size)
+        elif conv_type == "gat":
+            dim_out_message_passing = num_features+(mp_layers-1)*hidden_channels*heads if skip else hidden_channels*heads
+            self.conv_out = (FASTKAGATConv(dim_out_message_passing, num_classes, 1, grid_size))
         else:
             self.conv_out = GINConv(make_fastkan(dim_out_message_passing, hidden_channels, num_classes, hidden_layers, grid_size))
         self.dropout = torch.nn.Dropout(dropout)
