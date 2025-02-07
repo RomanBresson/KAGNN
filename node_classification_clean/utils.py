@@ -88,7 +88,7 @@ class EarlyStopper:
 
 def make_model(params):
     if params['architecture']=='mlp':
-        model = GNN_Nodes(conv_type=params['architecture'],
+        model = GNN_Nodes(conv_type=params['conv_type'],
                             mp_layers=params['mp_layers'],
                             num_features=params['num_features'],
                             hidden_channels=params['hidden_channels'],
@@ -97,7 +97,7 @@ def make_model(params):
                             hidden_layers=params['hidden_layers'],
                             dropout=params['dropout'])
     elif params['architecture']=='kan':
-        model = GKAN_Nodes(conv_type=params['architecture'],
+        model = GKAN_Nodes(conv_type=params['conv_type'],
                             mp_layers=params['mp_layers'],
                             num_features=params['num_features'],
                             hidden_channels=params['hidden_channels'],
@@ -108,7 +108,7 @@ def make_model(params):
                             grid_size=params['grid_size'],
                             spline_order=params['spline_order'])
     elif params['architecture']=='fastkan':
-        model = GFASTKAN_Nodes(conv_type=params['architecture'],
+        model = GFASTKAN_Nodes(conv_type=params['conv_type'],
                             mp_layers=params['mp_layers'],
                             num_features=params['num_features'],
                             hidden_channels=params['hidden_channels'],
@@ -191,6 +191,7 @@ def all_splits(params, data):
     for id_split in range(data.train_masks.shape[0]):
         print(f"Split {id_split}")
         model = make_model(params).to(device)
+        print(model)
         train_mask, val_mask, test_mask = data.train_masks[id_split], data.val_masks[id_split], data.test_masks[id_split]
         model, train_acc, val_acc, val_loss, test_acc = train_total(model, params, data, train_mask, val_mask, test_mask)
         models.append(model)

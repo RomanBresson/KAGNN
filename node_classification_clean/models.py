@@ -3,7 +3,7 @@ from fastkan import FastKAN,FastKANLayer
 import torch
 
 import torch.nn as nn
-from torch_geometric.nn import GINConv, GCNConv
+from torch_geometric.nn import GINConv, GCNConv, GATConv
 
 def make_mlp(num_features, hidden_dim, out_dim, hidden_layers):
     if hidden_layers>=2:
@@ -36,6 +36,15 @@ class KAGCNConv(GCNConv):
         super(KAGCNConv, self).__init__(in_feat, out_feat)
         self.lin = KANLayer(in_feat, out_feat, grid_size, spline_order)
 
+class KAGATConv(GATConv):
+    def __init__(self, in_feat:int,
+                 out_feat:int,
+                 heads:int,
+                 grid_size:int=4,
+                 spline_order:int=3):
+        super(KAGATConv, self).__init__(in_feat, out_feat, heads)
+        self.lin = KANLayer(in_feat, out_feat*heads, grid_size, spline_order)
+
 class GIKANLayer(GINConv):
     def __init__(self, in_feat:int,
                  out_feat:int,
@@ -64,6 +73,15 @@ class FASTKAGCNConv(GCNConv):
         self.grid_size = grid_size
         self.lin = FKANLayer(in_feat, out_feat, num_grids=grid_size)
 
+class FASTKAGATConv(GATConv):
+    def __init__(self, in_feat:int,
+                 out_feat:int,
+                 heads:int,
+                 grid_size:int=4,):
+        super(FASTKAGATConv, self).__init__(in_feat, out_feat, heads)
+        self.grid_size = grid_size
+        self.lin = FKANLayer(in_feat, out_feat*heads, grid_size)
+
 class GIFASTKANLayer(GINConv):
     def __init__(self, in_feat:int,
                  out_feat:int,
@@ -73,7 +91,6 @@ class GIFASTKANLayer(GINConv):
         kan = make_fastkan(in_feat, hidden_dim, out_feat, nb_layers, grid_size)
         GINConv.__init__(self, kan)
 
-"""
 class GNN_Nodes(torch.nn.Module):
     def __init__(self,  conv_type :str,
                  mp_layers:int,
@@ -82,72 +99,36 @@ class GNN_Nodes(torch.nn.Module):
                  num_classes:int,
                  skip:bool = True,
                  hidden_layers:int=2,
-                 dropout:float=0.):
-        super().__init__()
-        self.convs = torch.nn.ModuleList()
-        self.dropout = torch.nn.Dropout(dropout)
-        self.bn = torch.nn.BatchNorm1d(hidden_channels)
-        for i in range(mp_layers-1):
-            if i ==0:
-                if conv_type == "gcn":
-                    self.convs.append(GCNConv(num_features, hidden_channels))
-                else:
-                    self.convs.append(GINConv(make_mlp(num_features, hidden_channels, hidden_channels, hidden_layers)))
-            else:
-                if conv_type == "gcn":
-                    self.convs.append(GCNConv(hidden_channels, hidden_channels))
-                else:
-                    self.convs.append(GINConv(make_mlp(hidden_channels, hidden_channels, hidden_channels, hidden_layers)))
-        self.skip = skip
-        dim_out_message_passing = num_features+(mp_layers-1)*hidden_channels if skip else hidden_channels
-        if conv_type == "gcn":
-            self.conv_out = GCNConv(dim_out_message_passing, num_classes)
-        else:
-            self.conv_out = GINConv(make_mlp(dim_out_message_passing, hidden_channels, num_classes, hidden_layers))
-
-    def forward(self, x: torch.tensor , edge_index: torch.tensor):
-        l = []
-        l.append(x)
-        for conv in self.convs:
-            x = conv(x, edge_index)
-            x = torch.nn.functional.relu(x)
-            x = self.bn(x)
-            x = self.dropout(x)
-            l.append(x)
-        if self.skip:
-            x = torch.cat(l, dim=1)
-        x = self.conv_out(x, edge_index)
-        x = torch.nn.functional.relu(x)
-        return x
-"""
-
-class GNN_Nodes(torch.nn.Module):
-    def __init__(self,  conv_type :str,
-                 mp_layers:int,
-                 num_features:int,
-                 hidden_channels:int,
-                 num_classes:int,
-                 skip:bool = True,
-                 hidden_layers:int=2,
-                 dropout:float=0.):
+                 dropout:float=0.,
+                 heads=4):
         super().__init__()
         self.convs = torch.nn.ModuleList()
         self.bns = torch.nn.ModuleList()
+        if conv_type!='gat':
+            heads = 1
         torch.nn.BatchNorm1d(hidden_channels)
         for i in range(mp_layers):
-            self.bns.append(nn.BatchNorm1d(hidden_channels))
             if i ==0:
                 if conv_type == "gcn":
                     self.convs.append(GCNConv(num_features, hidden_channels))
-                else:
+                elif conv_type == "gat":
+                    self.convs.append(GATConv(num_features, hidden_channels, heads))
+                elif conv_type == "gin":
                     self.convs.append(GINConv(make_mlp(num_features, hidden_channels, hidden_channels, hidden_layers)))
+                else:
+                    raise ValueError("unknown conv_type")
             else:
                 if conv_type == "gcn":
                     self.convs.append(GCNConv(hidden_channels, hidden_channels))
-                else:
+                elif conv_type == "gat":
+                    self.convs.append(GATConv(hidden_channels*heads, hidden_channels, heads))
+                elif conv_type == "gin":
                     self.convs.append(GINConv(make_mlp(hidden_channels, hidden_channels, hidden_channels, hidden_layers)))
+            self.bns.append(nn.BatchNorm1d(hidden_channels*heads))
         self.skip = skip
         dim_out_message_passing = num_features+(mp_layers)*hidden_channels if skip else hidden_channels
+        if conv_type == "gat":
+            dim_out_message_passing = num_features+(mp_layers)*hidden_channels*heads if skip else hidden_channels*heads
         self.lay_out = torch.nn.Linear(dim_out_message_passing, num_classes)
         self.dropout = torch.nn.Dropout(dropout)
 
@@ -164,7 +145,6 @@ class GNN_Nodes(torch.nn.Module):
         x = self.lay_out(x)
         return x
 
-"""
 class GKAN_Nodes(torch.nn.Module):
     def __init__(self,  conv_type :str,
                  mp_layers:int,
@@ -175,72 +155,35 @@ class GKAN_Nodes(torch.nn.Module):
                  grid_size:int = 4,
                  spline_order:int = 3,
                  hidden_layers:int=2,
-                 dropout:float=0.):
-        super().__init__()
-        self.convs = torch.nn.ModuleList()
-        self.bn = torch.nn.BatchNorm1d(hidden_channels)
-        for i in range(mp_layers-1):
-            if i ==0:
-                if conv_type == "gcn":
-                    self.convs.append(KAGCNConv(num_features, hidden_channels, grid_size, spline_order))
-                else:
-                    self.convs.append(GIKANLayer(num_features, hidden_channels, grid_size, spline_order, hidden_channels, hidden_layers))
-            else:
-                if conv_type == "gcn":
-                    self.convs.append(KAGCNConv(hidden_channels, hidden_channels, grid_size, spline_order))
-                else:
-                    self.convs.append(GIKANLayer(hidden_channels, hidden_channels, grid_size, spline_order, hidden_channels, hidden_layers))
-        self.skip = skip
-        dim_out_message_passing = num_features+(mp_layers-1)*hidden_channels if skip else hidden_channels
-        if conv_type == "gcn":
-            self.conv_out = KAGCNConv(dim_out_message_passing, num_classes, grid_size, spline_order)
-        else:
-            self.conv_out = GINConv(make_kan(dim_out_message_passing, hidden_channels, num_classes, hidden_layers, grid_size, spline_order))
-        self.dropout = torch.nn.Dropout(dropout)
-
-    def forward(self, x: torch.tensor , edge_index: torch.tensor):
-        l = []
-        l.append(x)
-        for conv in self.convs:
-            x = conv(x, edge_index)
-            x = self.bn(x)
-            x = self.dropout(x)
-            l.append(x)
-        if self.skip:
-            x = torch.cat(l, dim=1)
-        x = self.conv_out(x, edge_index)
-        return x
-"""
-
-class GKAN_Nodes(torch.nn.Module):
-    def __init__(self,  conv_type :str,
-                 mp_layers:int,
-                 num_features:int,
-                 hidden_channels:int,
-                 num_classes:int,
-                 skip:bool = True,
-                 grid_size:int = 4,
-                 spline_order:int = 3,
-                 hidden_layers:int=2,
-                 dropout:float=0.):
+                 dropout:float=0.,
+                 heads=4):
         super().__init__()
         self.convs = torch.nn.ModuleList()
         self.bns = torch.nn.ModuleList()
-        torch.nn.BatchNorm1d(hidden_channels)
+        if conv_type!='gat':
+            heads = 1
         for i in range(mp_layers):
-            self.bns.append(nn.BatchNorm1d(hidden_channels))
             if i ==0:
                 if conv_type == "gcn":
                     self.convs.append(KAGCNConv(num_features, hidden_channels, grid_size, spline_order))
-                else:
+                elif conv_type == "gat":
+                    self.convs.append(KAGATConv(num_features, hidden_channels, heads, grid_size, spline_order))
+                elif conv_type == "gin":
                     self.convs.append(GIKANLayer(num_features, hidden_channels, grid_size, spline_order, hidden_channels, hidden_layers))
+                else:
+                    raise ValueError("unknown conv_type")
             else:
                 if conv_type == "gcn":
                     self.convs.append(KAGCNConv(hidden_channels, hidden_channels, grid_size, spline_order))
+                elif conv_type == "gat":
+                    self.convs.append(KAGATConv(hidden_channels*heads, hidden_channels, heads, grid_size, spline_order))
                 else:
                     self.convs.append(GIKANLayer(hidden_channels, hidden_channels, grid_size, spline_order, hidden_channels, hidden_layers))
+            self.bns.append(nn.BatchNorm1d(hidden_channels*heads))
         self.skip = skip
-        dim_out_message_passing = num_features+(mp_layers)*hidden_channels if skip else hidden_channels
+        dim_out_message_passing = num_features+mp_layers*hidden_channels if skip else hidden_channels
+        if conv_type == "gat":
+            dim_out_message_passing = num_features+mp_layers*hidden_channels*heads if skip else hidden_channels*heads
         self.lay_out = KANLinear(dim_out_message_passing, num_classes, grid_size=grid_size, spline_order=spline_order)
         self.dropout = torch.nn.Dropout(dropout)
 
@@ -257,7 +200,6 @@ class GKAN_Nodes(torch.nn.Module):
         x = self.lay_out(x)
         return x
 
-"""
 class GFASTKAN_Nodes(torch.nn.Module):
     def __init__(self,  conv_type :str,
                  mp_layers:int,
@@ -267,71 +209,35 @@ class GFASTKAN_Nodes(torch.nn.Module):
                  skip:bool = True,
                  grid_size:int = 4,
                  hidden_layers:int=2,
-                 dropout:float=0.):
-        super().__init__()
-        self.convs = torch.nn.ModuleList()
-        self.bn = torch.nn.BatchNorm1d(hidden_channels)
-        for i in range(mp_layers-1):
-            if i ==0:
-                if conv_type == "gcn":
-                    self.convs.append(FASTKAGCNConv(num_features, hidden_channels, grid_size))
-                else:
-                    self.convs.append(GIFASTKANLayer(num_features, hidden_channels, grid_size, hidden_channels, hidden_layers))
-            else:
-                if conv_type == "gcn":
-                    self.convs.append(FASTKAGCNConv(hidden_channels, hidden_channels, grid_size))
-                else:
-                    self.convs.append(GIFASTKANLayer(hidden_channels, hidden_channels, grid_size, hidden_channels, hidden_layers))
-        self.skip = skip
-        dim_out_message_passing = num_features+(mp_layers-1)*hidden_channels if skip else hidden_channels
-        if conv_type == "gcn":
-            self.conv_out = FASTKAGCNConv(dim_out_message_passing, num_classes, grid_size)
-        else:
-            self.conv_out = GINConv(make_fastkan(dim_out_message_passing, hidden_channels, num_classes, hidden_layers, grid_size))
-        self.dropout = torch.nn.Dropout(dropout)
-
-    def forward(self, x: torch.tensor, edge_index: torch.tensor):
-        l = []
-        l.append(x)
-        for conv in self.convs:
-            x = conv(x, edge_index)
-            x = self.bn(x)
-            x = self.dropout(x)
-            l.append(x)
-        if self.skip:
-            x = torch.cat(l, dim=1)
-        x = self.conv_out(x, edge_index)
-        return x
-"""
-
-class GFASTKAN_Nodes(torch.nn.Module):
-    def __init__(self,  conv_type :str,
-                 mp_layers:int,
-                 num_features:int,
-                 hidden_channels:int,
-                 num_classes:int,
-                 skip:bool = True,
-                 grid_size:int = 4,
-                 hidden_layers:int=2,
-                 dropout:float=0.):
+                 dropout:float=0.,
+                 heads=4):
         super().__init__()
         self.convs = torch.nn.ModuleList()
         self.bns = torch.nn.ModuleList()
-        torch.nn.BatchNorm1d(hidden_channels)
+        if conv_type!='gat':
+            heads = 1
         for i in range(mp_layers):
-            self.bns.append(nn.BatchNorm1d(hidden_channels))
             if i ==0:
                 if conv_type == "gcn":
                     self.convs.append(FASTKAGCNConv(num_features, hidden_channels, grid_size))
-                else:
+                elif conv_type == "gat":
+                    self.convs.append(FASTKAGATConv(num_features, hidden_channels, heads, grid_size))
+                elif conv_type== "gin":
                     self.convs.append(GIFASTKANLayer(num_features, hidden_channels, grid_size, hidden_channels, hidden_layers))
+                else:
+                    raise ValueError("unknown conv_type")
             else:
                 if conv_type == "gcn":
                     self.convs.append(FASTKAGCNConv(hidden_channels, hidden_channels, grid_size))
-                else:
+                elif conv_type == "gat":
+                    self.convs.append(FASTKAGATConv(hidden_channels*heads, hidden_channels, heads, grid_size))
+                elif conv_type== "gin":
                     self.convs.append(GIFASTKANLayer(hidden_channels, hidden_channels, grid_size, hidden_channels, hidden_layers))
+            self.bns.append(nn.BatchNorm1d(hidden_channels*heads))
         self.skip = skip
         dim_out_message_passing = num_features+(mp_layers)*hidden_channels if skip else hidden_channels
+        if conv_type == "gat":
+            dim_out_message_passing = num_features+(mp_layers)*hidden_channels*heads if skip else hidden_channels*heads
         self.lay_out = FastKANLayer(dim_out_message_passing, num_classes, num_grids=grid_size)
         self.dropout = torch.nn.Dropout(dropout)
 
