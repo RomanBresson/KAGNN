@@ -30,17 +30,17 @@ def objective(trial, dataset_name, args):
             'skip': args.skip
         }
     params['lr'] = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
-    params['dropout'] = trial.suggest_float('dropout', 0, 0)
+    params['dropout'] = trial.suggest_float('dropout', 0, 0.9)
     if params['conv_type']=='gin':
         params['hidden_layers'] = trial.suggest_int('hidden_layers', 1, 4)
     if params['architecture']=='mlp':
         params['hidden_channels'] = trial.suggest_int('hidden_channels', 1, 256)
     elif params['architecture']=='fastkan':
-        params['hidden_channels'] = trial.suggest_int('hidden_channels', 2, 8)
-        params['grid_size'] = trial.suggest_int('grid_size', 2, 4)
+        params['hidden_channels'] = trial.suggest_int('hidden_channels', 2, 128)
+        params['grid_size'] = trial.suggest_int('grid_size', 2, 32)
     elif params['architecture']=='kan':
-        params['hidden_channels'] = trial.suggest_int('hidden_channels', 2, 16)
-        params['grid_size'] = trial.suggest_int('grid_size', 1, 4)
+        params['hidden_channels'] = trial.suggest_int('hidden_channels', 2, 128)
+        params['grid_size'] = trial.suggest_int('grid_size', 1, 8)
         params['spline_order'] = trial.suggest_int('spline_order', 1, 3)
     mva,_,_,_ = run_experiment(params, dataset_name)
     return(mva)
