@@ -48,7 +48,7 @@ class KAGATConv(GATConv):
                  heads:int,
                  grid_size:int=4,
                  spline_order:int=3):
-        super(KAGATConv, self).__init__(in_feat, out_feat*heads)
+        super(KAGATConv, self).__init__(in_feat, out_feat, heads)
         self.lin = KANLayer(in_feat, out_feat*heads, grid_size, spline_order)
 
 class GIKANLayer(GINConv):
@@ -84,7 +84,7 @@ class FASTKAGATConv(GATConv):
                  out_feat:int,
                  heads:int,
                  grid_size:int=4,):
-        super(FASTKAGATConv, self).__init__(in_feat, out_feat*heads)
+        super(FASTKAGATConv, self).__init__(in_feat, out_feat, heads)
         self.grid_size = grid_size
         self.lin = FKANLayer(in_feat, out_feat*heads, grid_size)
 

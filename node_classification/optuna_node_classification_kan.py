@@ -26,11 +26,11 @@ def objective( trial: Trial,
         hidden_layers = trial.suggest_int('hidden_layers', 1, 4)
     else:
         hidden_layers = trial.suggest_int('hidden_layers', 0, 0)
-    hidden_channels = trial.suggest_int('hidden_channels', 2, 64)
+    hidden_channels = trial.suggest_int('hidden_channels', 2, 32)
     lr = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
     dropout = trial.suggest_float('dropout', 0, 0.9)
     val_losses = []
-    for _ in range(5):
+    for _ in range(3):
         val_loss, _, _ = train_and_evaluate_model(spline_order, hidden_channels, lr, hidden_layers, dropout, data, dataset_name, dataset,
                                 conv_type, skip, grid_size, n_epochs, device)
         val_losses.append(val_loss)
