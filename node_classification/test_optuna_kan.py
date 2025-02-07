@@ -19,7 +19,7 @@ def main():
     log = open("results/test_log_kan_time.txt", "a")
     set_seed(1)
     for dataset_name in ['Cora', 'CiteSeer', 'Actor', 'Texas','Cornell','Wisconsin', 'ogbn-arxiv']:
-        for conv_type in ['gin','gcn']:
+        for conv_type in ['gat']:
             print(dataset_name+ " "+conv_type)
             # free the torch memory
             torch.cuda.empty_cache()
