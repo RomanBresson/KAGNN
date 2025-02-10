@@ -13,6 +13,7 @@ parser.add_argument('--conv_type', default='gat', help='gin/gcn/gat')
 parser.add_argument('--architecture', default='mlp', help='MLP/KAN/FASTKAN')
 parser.add_argument('--rate_print', type=int, default=1000, help='Print frequency')
 parser.add_argument('--skip', type=int, default=1, help='skip connections')
+parser.add_argument('--heads', type=int, default=4, help='head count for multihead attention')
 args = parser.parse_args()
 
 def objective(trial, dataset_name, args):
@@ -27,7 +28,8 @@ def objective(trial, dataset_name, args):
             'grid_size': 0,
             'spline_order': 0,
             'rate_print': args.rate_print,
-            'skip': args.skip
+            'skip': args.skip,
+            'heads': args.heads
         }
     params['lr'] = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
     params['dropout'] = trial.suggest_float('dropout', 0, 0.9)

@@ -95,7 +95,8 @@ def make_model(params):
                             num_classes=params['num_classes'],
                             skip=params['skip'],
                             hidden_layers=params['hidden_layers'],
-                            dropout=params['dropout'])
+                            dropout=params['dropout'],
+                            heads=params['heads'])
     elif params['architecture']=='kan':
         model = GKAN_Nodes(conv_type=params['conv_type'],
                             mp_layers=params['mp_layers'],
@@ -106,7 +107,8 @@ def make_model(params):
                             hidden_layers=params['hidden_layers'],
                             dropout=params['dropout'],
                             grid_size=params['grid_size'],
-                            spline_order=params['spline_order'])
+                            spline_order=params['spline_order'],
+                            heads=params['heads'])
     elif params['architecture']=='fastkan':
         model = GFASTKAN_Nodes(conv_type=params['conv_type'],
                             mp_layers=params['mp_layers'],
@@ -116,7 +118,8 @@ def make_model(params):
                             skip=params['skip'],
                             hidden_layers=params['hidden_layers'],
                             dropout=params['dropout'],
-                            grid_size=params['grid_size'])
+                            grid_size=params['grid_size'],
+                            heads=params['heads'])
     print(count_params(model))
     return(model)
 
