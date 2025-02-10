@@ -28,7 +28,6 @@ def set_seed(seed=42):
     torch.manual_seed(seed)
 
 def load_data(dataset_name):
-    print(torch.cuda.mem_get_info(0))
     if dataset_name == 'ogbn-arxiv':
         dataset = PygNodePropPredDataset(name=dataset_name, root='data/'+dataset_name)
         split_idx = dataset.get_idx_split()
@@ -130,31 +129,36 @@ def train_one_epoch(model, data, train_mask, optimizer, criterion):
     loss = criterion(out[train_mask], data.y[train_mask])  # Compute the loss solely based on the training nodes.
     loss.backward()  # Derive gradients.
     optimizer.step()  # Update parameters based on gradients.
+    optimizer.zero_grad()
     return loss, out
 
 def evaluate_accuracy(model, data, mask):
-    model.eval()
-    out = model(data.x, data.edge_index)
-    pred = out.argmax(dim=1)  # Use the class with highest probability.
-    correct = pred[mask] == data.y[mask]  # Check against ground-truth labels.
-    acc = int(correct.sum()) / int(mask.sum())  # Derive ratio of correct predictions.
-    return acc
+    with torch.no_grad():
+        model.eval()
+        out = model(data.x, data.edge_index)
+        pred = out.argmax(dim=1)  # Use the class with highest probability.
+        correct = pred[mask] == data.y[mask]  # Check against ground-truth labels.
+        acc = int(correct.sum()) / int(mask.sum())  # Derive ratio of correct predictions.
+        return acc
 
 def evaluate_loss(model, data, mask, criterion):
-    model.eval()
-    out = model(data.x,data.edge_index)
-    loss = criterion(out[mask], data.y[mask])
-    return loss, out
+    with torch.no_grad():
+        model.eval()
+        out = model(data.x,data.edge_index)
+        loss = criterion(out[mask], data.y[mask])
+        return loss, out
 
 def efficient_evaluation_accuracy(y, out, mask):
-    pred = out.argmax(dim=1)  # Use the class with highest probability.
-    correct = pred[mask] == y[mask]  # Check against ground-truth labels.
-    acc = int(correct.sum()) / int(mask.sum())  # Derive ratio of correct predictions.
-    return acc
+    with torch.no_grad():
+        pred = out.argmax(dim=1)  # Use the class with highest probability.
+        correct = pred[mask] == y[mask]  # Check against ground-truth labels.
+        acc = int(correct.sum()) / int(mask.sum())  # Derive ratio of correct predictions.
+        return acc
 
 def efficient_evaluation_loss(y, out, mask, criterion):
-    loss = criterion(out[mask], y[mask])
-    return loss
+    with torch.no_grad():
+        loss = criterion(out[mask], y[mask])
+        return loss
 
 def train_total(model, params, data, train_mask, val_mask, test_mask=None):
     torch.save(model, f"models_saves/{params['dataset']}_{params['architecture']}_{params['conv_type']}")
@@ -165,13 +169,15 @@ def train_total(model, params, data, train_mask, val_mask, test_mask=None):
     criterion = torch.nn.CrossEntropyLoss()
     for epoch in range(params['epochs']):
         train_one_epoch(model, data, train_mask, optimizer, criterion)
-        out = model(data.x, data.edge_index)
-        val_loss = efficient_evaluation_loss(data.y, out, val_mask, criterion)
+        with torch.no_grad():
+            out = model(data.x, data.edge_index)
+            val_loss = efficient_evaluation_loss(data.y, out, val_mask, criterion)
         if not ((epoch+1)%params['rate_print']):
-            train_acc = efficient_evaluation_accuracy(data.y, out, train_mask)
-            val_acc = efficient_evaluation_accuracy(data.y, out, val_mask)
-            test_acc = efficient_evaluation_accuracy(data.y, out, test_mask)
-            print(f'Train acc: {train_acc}, Val acc: {val_acc}, Test acc: {test_acc}')
+            with torch.no_grad():
+                train_acc = efficient_evaluation_accuracy(data.y, out, train_mask)
+                val_acc = efficient_evaluation_accuracy(data.y, out, val_mask)
+                test_acc = efficient_evaluation_accuracy(data.y, out, test_mask)
+                print(f'Train acc: {train_acc}, Val acc: {val_acc}, Test acc: {test_acc}')
         should_save, should_stop = early_stopper.early_stop(val_loss)
         if should_save:
             torch.save(model, f"models_saves/{params['dataset']}_{params['architecture']}_{params['conv_type']}")
