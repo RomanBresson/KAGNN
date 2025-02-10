@@ -134,12 +134,14 @@ class GNN_Nodes(torch.nn.Module):
 
     def forward(self, x: torch.tensor, edge_index: torch.tensor):
         l = []
-        l.append(x)
+        if self.skip:
+            l.append(x)
         for conv,bn in zip(self.convs, self.bns):
             x = conv(x, edge_index)
             x = bn(x)
             x = self.dropout(x)
-            l.append(x)
+            if self.skip:
+                l.append(x)
         if self.skip:
             x = torch.cat(l, dim=1)
         x = self.lay_out(x)
