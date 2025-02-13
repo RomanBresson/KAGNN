@@ -129,7 +129,6 @@ def train_one_epoch(model, data, train_mask, optimizer, criterion):
     loss = criterion(out[train_mask], data.y[train_mask])  # Compute the loss solely based on the training nodes.
     loss.backward()  # Derive gradients.
     optimizer.step()  # Update parameters based on gradients.
-    optimizer.zero_grad()
     return loss, out
 
 def evaluate_accuracy(model, data, mask):
