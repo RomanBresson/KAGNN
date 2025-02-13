@@ -27,7 +27,8 @@ params = {'hidden_channels':8,
             'architecture':args.architecture,
             'num_features': data.num_features,
             'num_classes': data.num_classes,
-            'patience': args.patience
+            'patience': args.patience,
+            'heads': args.heads
         }
 
 #%%

@@ -200,7 +200,6 @@ def all_splits(params, data):
     for id_split in range(data.train_masks.shape[0]):
         print(f"Split {id_split}")
         model = make_model(params).to(device)
-        print(model)
         train_mask, val_mask, test_mask = data.train_masks[id_split], data.val_masks[id_split], data.test_masks[id_split]
         model, train_acc, val_acc, val_loss, test_acc = train_total(model, params, data, train_mask, val_mask, test_mask)
         models.append(model)
@@ -211,6 +210,8 @@ def all_splits(params, data):
     return(models, train_accs, val_accs, val_losses, test_accs)
 
 def run_experiment(params, data_name):
+    print("Testing params")
+    print(params)
     log_file = f"logs/{data_name}_{params['architecture']}_{params['conv_type']}"
     data = load_data(data_name)
     params['mp_layers'] = dataset_layers[data_name]

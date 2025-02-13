@@ -65,6 +65,7 @@ for bp,v in best_params.items():
     params[bp] = v
 
 test_accs = []
+print("Evaluating")
 for _ in range(3):
     _,_,_,test_acc_tens = run_experiment(params, args.dataset)
     test_accs.append(test_acc_tens)
