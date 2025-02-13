@@ -3,7 +3,7 @@ import numpy as np
 import argparse
 import torch
 from graph_classification_utils import parameters_finder, EarlyStopper, val, test, train, count_params, layers_per_dataset
-from models import KAGIN, KAGCN
+from models import KAGIN, KAGCN, KAGAT
 
 # Argument parser
 parser = argparse.ArgumentParser(description='KAGIN')
@@ -12,7 +12,8 @@ parser.add_argument('--batch-size', type=int, default=64, help='Input batch size
 parser.add_argument('--epochs', type=int, default=2000, help='Number of epochs to train')
 parser.add_argument('--patience', type=int, default=20, help='Patience of early stopping')
 parser.add_argument('--random_seed', type=int, default=12345, help='Random seed')
-parser.add_argument('--model_type', default='GIN', help='GIN/GCN')
+parser.add_argument('--model_type', default='GIN', help='GIN/GCN/GAT')
+parser.add_argument('--heads', type=int, default=4, help='GAT heads')
 args = parser.parse_args()
 
 #Uncomment for machine-wise reproducibility, using "export CUBLAS_WORKSPACE_CONFIG=:4096:8"
@@ -33,6 +34,8 @@ def train_model_with_parameters(params, train_loader, val_loader, test_loader=No
         model = KAGIN(layers_per_dataset[args.dataset], train_loader.dataset.num_features, hidden_dim, train_loader.dataset.num_classes, hidden_layers, grid_size, spline_order, dropout).to(device)
     elif args.model_type == 'GCN':
         model = KAGCN(layers_per_dataset[args.dataset], train_loader.dataset.num_features, hidden_dim, train_loader.dataset.num_classes, grid_size, spline_order, dropout).to(device)
+    elif args.model_type == 'GAT':
+        model = KAGAT(layers_per_dataset[args.dataset], train_loader.dataset.num_features, hidden_dim, train_loader.dataset.num_classes, grid_size, spline_order, dropout, args.heads).to(device)
     print(model)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     best_val_loss = float('inf')
