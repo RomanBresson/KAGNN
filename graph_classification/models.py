@@ -84,7 +84,7 @@ class GAT(nn.Module):
             x = self.conv[i](x, edge_index)
             x = F.silu(x)
             x = self.dropout(x)
-        x = global_mean_pool(x, data.batch)
+        x = global_add_pool(x, data.batch)
         x = self.readout(x)
         return F.log_softmax(x, dim=1)
 
@@ -211,7 +211,7 @@ class KAGAT(nn.Module):
             x = self.conv[i](x, edge_index)
             x = F.silu(x)
             x = self.dropout(x)
-        x = global_mean_pool(x, data.batch)
+        x = global_add_pool(x, data.batch)
         x = self.readout(x)
         return F.log_softmax(x, dim=1)
 
@@ -283,6 +283,6 @@ class FASTKAGAT(nn.Module):
             x = self.conv[i](x, edge_index)
             x = F.silu(x)
             x = self.dropout(x)
-        x = global_mean_pool(x, data.batch)
+        x = global_add_pool(x, data.batch)
         x = self.readout(x)
         return F.log_softmax(x, dim=1)
