@@ -59,7 +59,8 @@ params = {
         'epochs': args.epochs,
         'rate_print': args.rate_print,
         'hidden_layers': 0,
-        'skip': args.skip
+        'skip': args.skip,
+        'heads': args.heads
     }
 for bp,v in best_params.items():
     params[bp] = v
