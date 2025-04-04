@@ -10,13 +10,14 @@ For our KAN-based models, we used the [efficient-kan implementation](https://git
 
 Please cite our work if you use code from this repository:
 ```
-@misc{bresson2024kagnn,
-      title={KAGNNs: Kolmogorov-Arnold Networks meet Graph Learning}, 
+@article{
+      bresson2025kagnns,
+      title={{KAGNN}s: Kolmogorov-Arnold Networks meet Graph Learning},
       author={Roman Bresson and Giannis Nikolentzos and George Panagopoulos and Michail Chatzianastasis and Jun Pang and Michalis Vazirgiannis},
-      year={2024},
-      eprint={2406.18380},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2406.18380}, 
+      journal={Transactions on Machine Learning Research},
+      issn={2835-8856},
+      year={2025},
+      url={https://openreview.net/forum?id=03UB1MCAMr},
+      note={}
 }
 ```
